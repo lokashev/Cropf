@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>FRAME 2.39 — Киношное кадрирование и Кривые</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0806; --bg-2: #14100a; --bg-3: #1d1610;
+    --fg: #f5ebd6; --muted: #8a7e6a; --muted-2: #5a513f;
+    --accent: #e8a838; --accent-2: #c75a3a; --accent-3: #f4c66b;
+    --border: rgba(232, 168, 56, 0.15); --border-2: rgba(232, 168, 56, 0.08);
+    --card: rgba(20, 16, 10, 0.7);
+  }
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--fg); font-family: 'Manrope', sans-serif; overflow-x: hidden; -webkit-font-smoothing: antialiased; margin: 0; }
+  .font-display { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.02em; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  
+  .grain { position: fixed; inset: 0; pointer-events: none; z-index: 100; opacity: 0.08; mix-blend-mode: overlay; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-grid { position: fixed; inset: 0; z-index: 0; opacity: 0.4; background-image: linear-gradient(rgba(232, 168, 56, 0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(232, 168, 56, 0.025) 1px, transparent 1px); background-size: 60px 60px; mask-image: radial-gradient(ellipse at 50% 30%, black, transparent 80%); -webkit-mask-image: radial-gradient(ellipse at 50% 30%, black, transparent 80%); }
+  .glow { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; }
+  .glow-amber { width: 600px; height: 600px; background: radial-gradient(circle, rgba(232, 168, 56, 0.22), transparent 70%); }
+  .glow-red { width: 500px; height: 500px; background: radial-gradient(circle, rgba(199, 90, 58, 0.18), transparent 70%); }
+
+  .crop-frame { position: relative; background: #000; overflow: hidden; touch-action: none; box-shadow: 0 0 0 1px rgba(232, 168, 56, 0.25), 0 30px 80px rgba(0, 0, 0, 0.8); transition: aspect-ratio 0.4s cubic-bezier(.4,0,.2,1); }
+  .crop-image { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform, filter; user-select: none; -webkit-user-drag: none; pointer-events: none; opacity: 0; transition: opacity 0.35s ease; max-width: none; }
+  .crop-image.loaded { opacity: 1; }
+
+  .guides { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+  .guides.active { opacity: 1; }
+  .guides-v1, .guides-v2, .guides-h1, .guides-h2 { position: absolute; background: rgba(245, 235, 214, 0.2); }
+  .guides-v1 { top: 0; bottom: 0; left: 33.333%; width: 1px; } .guides-v2 { top: 0; bottom: 0; left: 66.666%; width: 1px; }
+  .guides-h1 { left: 0; right: 0; top: 33.333%; height: 1px; } .guides-h2 { left: 0; right: 0; top: 66.666%; height: 1px; }
+  .safe-area { position: absolute; inset: 4%; border: 1px dashed rgba(232, 168, 56, 0.3); pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+  .safe-area.active { opacity: 1; }
+
+  .ratio-btn { transition: all 0.25s ease; border: 1px solid var(--border); background: rgba(20, 16, 10, 0.5); position: relative; overflow: hidden; }
+  .ratio-btn::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(232, 168, 56, 0.15), transparent); opacity: 0; transition: opacity 0.3s; }
+  .ratio-btn:hover { border-color: rgba(232, 168, 56, 0.4); } .ratio-btn:hover::before { opacity: 1; }
+  .ratio-btn.active { background: linear-gradient(135deg, rgba(232, 168, 56, 0.2), rgba(199, 90, 58, 0.08)); border-color: var(--accent); color: var(--accent); }
+  .ratio-btn.active::after { content: ''; position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--val, 0%), rgba(232, 168, 56, 0.15) var(--val, 0%), rgba(232, 168, 56, 0.15) 100%); border-radius: 2px; outline: none; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: 0 0 0 4px rgba(232, 168, 56, 0.2); border: 2px solid var(--bg); }
+  input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); }
+
+  .btn-primary { background: linear-gradient(135deg, var(--accent), #b8862e); color: #1a1208; font-weight: 700; transition: all 0.25s ease; box-shadow: 0 8px 24px rgba(232, 168, 56, 0.25); position: relative; overflow: hidden; border: none; }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(232, 168, 56, 0.4); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important; box-shadow: none; }
+  .btn-ghost { border: 1px solid var(--border); background: rgba(20, 16, 10, 0.5); transition: all 0.25s ease; color: var(--fg); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .swatch { aspect-ratio: 1; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); transition: all 0.2s; position: relative; }
+  .swatch:hover { transform: scale(1.08); border-color: var(--accent); }
+  .swatch.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--accent); }
+
+  .drop-zone-active { border-color: var(--accent) !important; background: rgba(232, 168, 56, 0.06) !important; }
+  .corner { position: absolute; width: 18px; height: 18px; border-color: var(--accent); pointer-events: none; z-index: 5; }
+  .corner-tl { top: 8px; left: 8px; border-top: 2px solid; border-left: 2px solid; } .corner-tr { top: 8px; right: 8px; border-top: 2px solid; border-right: 2px solid; }
+  .corner-bl { bottom: 8px; left: 8px; border-bottom: 2px solid; border-left: 2px solid; } .corner-br { bottom: 8px; right: 8px; border-bottom: 2px solid; border-right: 2px solid; }
+  .toast { transform: translate(-50%, 100px); transition: transform 0.4s cubic-bezier(.4,0,.2,1); } .toast.show { transform: translate(-50%, 0); }
+  .toggle-btn { transition: all 0.25s; } .toggle-btn .dot { transition: all 0.25s; }
+
+  /* КРИВЫЕ */
+  .curve-container { background: var(--bg-3); border: 1px solid var(--border-2); border-radius: 6px; padding: 10px; }
+  #curveSvg { width: 100%; aspect-ratio: 1; display: block; touch-action: none; border-radius: 4px; }
+  .curve-line { fill: none; stroke: var(--accent); stroke-width: 2; pointer-events: none; }
+  .curve-point { fill: var(--fg); stroke: var(--accent); stroke-width: 2; cursor: grab; }
+  .curve-point.active { fill: var(--accent); }
+  .curve-point:active { cursor: grabbing; }
+  #curveHistogram path { fill: rgba(232, 168, 56, 0.15); stroke: rgba(232, 168, 56, 0.3); stroke-width: 1; }
+</style>
+</head>
+<body class="min-h-screen relative">
+
+<!-- Hidden SVG for Filter -->
+<svg width="0" height="0" style="position: absolute; pointer-events: none;">
+  <filter id="curvesFilter">
+    <feComponentTransfer>
+      <feFuncR type="table" tableValues="0 1"/>
+      <feFuncG type="table" tableValues="0 1"/>
+      <feFuncB type="table" tableValues="0 1"/>
+    </feComponentTransfer>
+  </filter>
+</svg>
+
+<div class="grain"></div>
+<div class="bg-grid"></div>
+<div class="glow glow-amber" style="top: -200px; left: -200px;"></div>
+<div class="glow glow-red" style="bottom: -150px; right: -100px;"></div>
+
+<header class="relative z-10 px-5 md:px-10 py-5 flex items-center justify-between border-b border-[var(--border)]">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 border border-[var(--accent)] rounded-sm flex items-center justify-center relative" style="background: rgba(232, 168, 56, 0.05);">
+      <div class="w-2.5 h-2.5 bg-[var(--accent)]"></div>
+      <div class="absolute inset-1 border border-[var(--accent)] opacity-40"></div>
+    </div>
+    <div>
+      <div class="font-display text-2xl tracking-wider leading-none">FRAME 2.39</div>
+      <div class="text-[10px] tracking-[0.3em] text-[var(--muted)] uppercase">CINEMATIC CURVES STUDIO</div>
+    </div>
+  </div>
+  <button onclick="document.getElementById('fileInput').click()" class="btn-primary px-5 py-2.5 rounded-md text-xs tracking-widest hidden sm:block">ЗАГРУЗИТЬ КАДР</button>
+  <button onclick="document.getElementById('fileInput').click()" class="btn-primary w-10 h-10 rounded-md flex items-center justify-center sm:hidden">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+</header>
+
+<main id="crop" class="relative z-10 px-5 md:px-10 pt-8 md:pt-14 pb-16">
+  <div class="max-w-7xl mx-auto mb-8 md:mb-12">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-8 h-px bg-[var(--accent)]"></div>
+      <span class="text-[11px] tracking-[0.3em] text-[var(--accent)] uppercase">01 — Инструмент</span>
+    </div>
+    <h1 class="font-display text-5xl md:text-7xl lg:text-8xl leading-[0.9] tracking-tight">
+      Кадрируй как<br/><span class="text-[var(--accent)]">кинематографист</span>
+    </h1>
+    <p class="text-[var(--muted)] mt-5 max-w-xl text-sm md:text-base leading-relaxed">
+      Преврати любое фото в кадр из фильма. Кадрируй, выравняй композицию, настраивай цвет кривыми и сохраняй в полном разрешении.
+    </p>
+  </div>
+
+  <div class="max-w-7xl mx-auto grid lg:grid-cols-[1fr_340px] gap-6">
+    <div class="relative">
+      <div id="dropZone" class="crop-frame rounded-lg relative" style="aspect-ratio: 2.39 / 1;">
+        <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+        <div id="emptyState" class="absolute inset-0 flex items-center justify-center px-6 py-12 cursor-pointer z-10">
+          <div class="text-center">
+            <div class="w-16 h-16 mx-auto mb-4 border border-[var(--accent)] rounded-md flex items-center justify-center" style="background: rgba(232, 168, 56, 0.05);">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-[var(--accent)]"><rect x="3" y="3" width="18" height="18" rx="1"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+            </div>
+            <div class="font-display text-2xl md:text-3xl tracking-wider mb-2">ПЕРЕТАЩИ ФОТО</div>
+            <div class="text-xs text-[var(--muted)] tracking-wider mb-5">или нажми, чтобы выбрать с устройства</div>
+            <button onclick="event.stopPropagation(); document.getElementById('fileInput').click()" class="btn-primary px-6 py-2.5 rounded-md text-xs tracking-widest">ВЫБРАТЬ ФАЙЛ</button>
+          </div>
+        </div>
+        <img id="cropImage" class="crop-image" alt="" draggable="false">
+        <div id="guides" class="guides"><div class="guides-v1"></div><div class="guides-v2"></div><div class="guides-h1"></div><div class="guides-h2"></div></div>
+        <div id="safeArea" class="safe-area"></div>
+        <div id="loadingState" class="hidden absolute inset-0 flex items-center justify-center bg-black/60 z-20">
+          <div class="w-10 h-10 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <button id="replaceBtn" class="hidden absolute top-3 right-3 z-20 w-9 h-9 rounded-md bg-black/60 backdrop-blur border border-[var(--border)] hover:border-[var(--accent)] flex items-center justify-center transition" title="Заменить фото">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-[var(--fg)]"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v5h5"/></svg>
+        </button>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" class="hidden">
+      <div class="mt-3 flex items-center justify-between text-[11px] text-[var(--muted)] flex-wrap gap-2">
+        <div class="flex items-center gap-3 font-mono">
+          <span id="fileName" class="truncate max-w-[180px] md:max-w-[260px]">Нет файла</span>
+          <span class="text-[var(--border)]">/</span><span id="dimensions">— × —</span>
+        </div>
+        <div class="flex items-center gap-3 font-mono">
+          <span class="text-[var(--accent)]" id="currentRatio">2.39 : 1</span>
+          <span class="text-[var(--border)]">/</span><span id="zoomLevel">100%</span>
+        </div>
+      </div>
+    </div>
+
+    <aside class="space-y-4">
+      <div class="bg-[var(--card)] backdrop-blur-sm border border-[var(--border)] rounded-lg p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-display text-lg tracking-wider">СООТНОШЕНИЕ</h3>
+          <span class="text-[10px] text-[var(--muted)] tracking-widest">ASPECT RATIO</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2" id="ratioGrid"></div>
+      </div>
+
+      <!-- КРИВЫЕ -->
+      <div class="bg-[var(--card)] backdrop-blur-sm border border-[var(--border)] rounded-lg p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-display text-lg tracking-wider">КРИВЫЕ</h3>
+          <button id="resetCurvesBtn" class="text-[10px] text-[var(--accent)] tracking-widest hover:underline">СБРОС</button>
+        </div>
+        <div class="curve-container">
+          <svg id="curveSvg" viewBox="0 0 256 256" preserveAspectRatio="none">
+            <g id="curveHistogram"><path d="M 0 256 L 256 256 Z" /></g>
+            <line x1="0" y1="256" x2="256" y2="0" stroke="rgba(245, 235, 214, 0.1)" stroke-width="1" stroke-dasharray="4 4"/>
+            <line x1="64" y1="0" x2="64" y2="256" stroke="rgba(245, 235, 214, 0.05)"/>
+            <line x1="128" y1="0" x2="128" y2="256" stroke="rgba(245, 235, 214, 0.05)"/>
+            <line x1="192" y1="0" x2="192" y2="256" stroke="rgba(245, 235, 214, 0.05)"/>
+            <line x1="0" y1="64" x2="256" y2="64" stroke="rgba(245, 235, 214, 0.05)"/>
+            <line x1="0" y1="128" x2="256" y2="128" stroke="rgba(245, 235, 214, 0.05)"/>
+            <line x1="0" y1="192" x2="256" y2="192" stroke="rgba(245, 235, 214, 0.05)"/>
+            <path id="curvePath" class="curve-line" d="M 0 256 L 256 0"></path>
+            <g id="curvePoints"></g>
+            <rect id="curveHitArea" x="0" y="0" width="256" height="256" fill="transparent" style="cursor: copy;"/>
+          </svg>
+        </div>
+        <p class="text-[10px] text-[var(--muted)] mt-3 leading-relaxed">Тапни, чтобы добавить точку. Перетаскивай для изгиба. Двойной тап по точке — удалить.</p>
+      </div>
+
+      <div class="bg-[var(--card)] backdrop-blur-sm border border-[var(--border)] rounded-lg p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-display text-lg tracking-wider">МАСШТАБ</h3>
+          <span id="zoomValue" class="font-mono text-xs text-[var(--accent)]">100%</span>
+        </div>
+        <input type="range" id="zoomSlider" min="100" max="300" value="100" step="1">
+      </div>
+
+      <div class="bg-[var(--card)] backdrop-blur-sm border border-[var(--border)] rounded-lg p-5 space-y-4">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-display text-lg tracking-wider">ЦВЕТ ПОЛОС</h3>
+            <span class="text-[10px] text-[var(--muted)] tracking-widest">LETTERBOX</span>
+          </div>
+          <div class="grid grid-cols-6 gap-2" id="colorPalette"></div>
+        </div>
+        <div class="pt-3 border-t border-[var(--border-2)]">
+          <div class="flex items-center justify-between">
+            <label class="text-xs text-[var(--fg)] tracking-wider cursor-pointer">Сетка композиции</label>
+            <button id="guidesToggle" class="toggle-btn relative w-10 h-5 rounded-full bg-[var(--bg-3)] border border-[var(--border)]" data-active="false">
+              <span class="dot absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-full bg-[var(--muted)]"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <button id="downloadBtn" class="btn-primary w-full py-3.5 rounded-md text-sm tracking-widest disabled:opacity-40 flex items-center justify-center gap-2" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          СКАЧАТЬ КАДР
+        </button>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="resetBtn" class="btn-ghost py-2.5 rounded-md text-xs tracking-widest">СБРОС</button>
+          <button id="changeBtn" class="btn-ghost py-2.5 rounded-md text-xs tracking-widest">НОВОЕ ФОТО</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<div id="toast" class="toast fixed bottom-6 left-1/2 bg-[var(--bg-2)] border border-[var(--accent)] text-[var(--fg)] px-5 py-3 rounded-md text-sm shadow-2xl z-[200] pointer-events-none flex items-center gap-2">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-[var(--accent)]"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toastMessage"></span>
+</div>
+
+<script>
+  const RATIOS = [
+    { id: '2.39:1', label: '2.39 : 1', sub: 'CINEMASCOPE', w: 2.39, h: 1 },
+    { id: '2.35:1', label: '2.35 : 1', sub: 'ANAMORPHIC', w: 2.35, h: 1 },
+    { id: '2.40:1', label: '2.40 : 1', sub: 'WIDESCREEN', w: 2.40, h: 1 },
+    { id: '2.76:1', label: '2.76 : 1', sub: 'ULTRA PANAVISION', w: 2.76, h: 1 },
+    { id: '2.20:1', label: '2.20 : 1', sub: 'TODD-AO', w: 2.20, h: 1 },
+    { id: '1.85:1', label: '1.85 : 1', sub: 'STANDARD US', w: 1.85, h: 1 },
+    { id: '2:1', label: '2 : 1', sub: 'UNIVISIUM', w: 2, h: 1 },
+    { id: '16:9', label: '16 : 9', sub: 'HDTV', w: 16, h: 9 },
+  ];
+
+  const COLORS = [
+    { name: 'Чистый чёрный', color: '#000000' },
+    { name: 'Тёмный графит', color: '#0a0a0a' },
+    { name: 'Кофейный', color: '#1a1208' },
+    { name: 'Бордовый', color: '#1a0808' },
+    { name: 'Ночной синий', color: '#0a0f1a' },
+    { name: 'Угольный', color: '#181818' },
+  ];
+
+  const state = {
+    image: null,
+    imgWidth: 0,
+    imgHeight: 0,
+    offsetX: 0,
+    offsetY: 0,
+    zoom: 1,
+    baseScale: 1,
+    ratio: RATIOS[0],
+    letterbox: '#000000',
+    fileName: '',
+    curvePoints: [{x: 0, y: 256}, {x: 256, y: 0}], // y is inverted (0 top, 256 bottom)
+    curveLUT: [],
+    draggedPoint: null,
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const dropZone = $('dropZone');
+  const fileInput = $('fileInput');
+  const cropImage = $('cropImage');
+  const emptyState = $('emptyState');
+  const loadingState = $('loadingState');
+  const replaceBtn = $('replaceBtn');
+  const zoomSlider = $('zoomSlider');
+  const zoomValue = $('zoomValue');
+  const zoomLevel = $('zoomLevel');
+  const currentRatio = $('currentRatio');
+  const fileNameEl = $('fileName');
+  const dimensionsEl = $('dimensions');
+  const downloadBtn = $('downloadBtn');
+  const resetBtn = $('resetBtn');
+  const changeBtn = $('changeBtn');
+  const toast = $('toast');
+  const toastMessage = $('toastMessage');
+
+  const curveSvg = $('curveSvg');
+  const curvePath = $('curvePath');
+  const curvePointsGroup = $('curvePoints');
+  const curveHitArea = $('curveHitArea');
+  const resetCurvesBtn = $('resetCurvesBtn');
+
+  function init() {
+    renderRatios();
+    renderColors();
+    bindEvents();
+    updateSliderFill();
+    initCurves();
+    updateCurveLUT();
+  }
+
+  function renderRatios() {
+    const grid = $('ratioGrid');
+    grid.innerHTML = RATIOS.map((r, i) => `
+      <button data-ratio="${r.id}" class="ratio-btn ${i === 0 ? 'active' : ''} rounded-md py-3 px-3 text-left">
+        <div class="font-display text-base leading-none">${r.label}</div>
+        <div class="text-[9px] text-[var(--muted)] tracking-wider mt-1.5">${r.sub}</div>
+      </button>
+    `).join('');
+    grid.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        grid.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const r = RATIOS.find(x => x.id === btn.dataset.ratio);
+        state.ratio = r;
+        currentRatio.textContent = r.label;
+        updateFrame();
+        showToast('Формат: ' + r.label);
+      });
+    });
+  }
+
+  function renderColors() {
+    const pal = $('colorPalette');
+    pal.innerHTML = COLORS.map((c, i) => `
+      <button data-color="${c.color}" class="swatch ${i === 0 ? 'active' : ''}" style="background: ${c.color};" title="${c.name}"></button>
+    `).join('');
+    pal.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        pal.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.letterbox = btn.dataset.color;
+        dropZone.style.background = state.letterbox;
+      });
+    });
+  }
+
+  function bindEvents() {
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) loadFile(file);
+      e.target.value = '';
+    });
+
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drop-zone-active'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone-active'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drop-zone-active');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) loadFile(file);
+    });
+
+    emptyState.addEventListener('click', () => fileInput.click());
+    replaceBtn.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
+    changeBtn.addEventListener('click', () => fileInput.click());
+
+    zoomSlider.addEventListener('input', (e) => {
+      const v = parseInt(e.target.value);
+      state.zoom = v / 100;
+      zoomValue.textContent = v + '%';
+      zoomLevel.textContent = v + '%';
+      constrainOffset();
+      updateImageTransform();
+      updateSliderFill();
+    });
+
+    downloadBtn.addEventListener('click', downloadImage);
+    resetBtn.addEventListener('click', resetView);
+
+    let isDragging = false, startX = 0, startY = 0, startOffsetX = 0, startOffsetY = 0;
+
+    dropZone.addEventListener('pointerdown', (e) => {
+      if (!state.image) return;
+      if (e.pointerType === 'touch' && e.isPrimary === false) return;
+      isDragging = true;
+      startX = e.clientX; startY = e.clientY;
+      startOffsetX = state.offsetX; startOffsetY = state.offsetY;
+      try { dropZone.setPointerCapture(e.pointerId); } catch(_) {}
+      dropZone.style.cursor = 'grabbing';
+    });
+
+    dropZone.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      state.offsetX = startOffsetX + dx;
+      state.offsetY = startOffsetY + dy;
+      constrainOffset();
+      updateImageTransform();
+    });
+
+    const endDrag = () => { if (isDragging) { isDragging = false; dropZone.style.cursor = ''; } };
+    dropZone.addEventListener('pointerup', endDrag);
+    dropZone.addEventListener('pointercancel', endDrag);
+    dropZone.addEventListener('pointerleave', endDrag);
+
+    let pinchDist = 0, pinchZoom = 1;
+    dropZone.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        pinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        pinchZoom = state.zoom;
+      }
+    }, { passive: true });
+
+    dropZone.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2 && pinchDist > 0) {
+        e.preventDefault();
+        const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        const scale = dist / pinchDist;
+        let newZoom = Math.max(1, Math.min(3, pinchZoom * scale));
+        state.zoom = newZoom;
+        const v = Math.round(newZoom * 100);
+        zoomSlider.value = v; zoomValue.textContent = v + '%'; zoomLevel.textContent = v + '%';
+        constrainOffset(); updateImageTransform(); updateSliderFill();
+      }
+    }, { passive: false });
+
+    dropZone.addEventListener('wheel', (e) => {
+      if (!state.image) return;
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.05 : 0.05;
+      state.zoom = Math.max(1, Math.min(3, state.zoom + delta));
+      const v = Math.round(state.zoom * 100);
+      zoomSlider.value = v; zoomValue.textContent = v + '%'; zoomLevel.textContent = v + '%';
+      constrainOffset(); updateImageTransform(); updateSliderFill();
+    }, { passive: false });
+
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (state.image) { fitImage(); updateImageTransform(); }
+      }, 100);
+    });
+  }
+
+  function updateSliderFill() {
+    const v = zoomSlider.value, min = zoomSlider.min || 0, max = zoomSlider.max || 100;
+    const pct = ((v - min) / (max - min)) * 100;
+    zoomSlider.style.setProperty('--val', pct + '%');
+  }
+
+  function loadFile(file) {
+    if (!file.type.startsWith('image/')) return showToast('Поддерживаются только изображения');
+    loadingState.classList.remove('hidden');
+    state.fileName = file.name;
+    fileNameEl.textContent = file.name;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        state.image = img;
+        state.imgWidth = img.naturalWidth;
+        state.imgHeight = img.naturalHeight;
+        dimensionsEl.textContent = `${img.naturalWidth} × ${img.naturalHeight}`;
+
+        cropImage.classList.remove('loaded');
+        cropImage.style.width = img.naturalWidth + 'px';
+        cropImage.style.height = img.naturalHeight + 'px';
+        
+        generateHistogram(img);
+        fitImage();
+        updateImageTransform();
+
+        const showImage = () => requestAnimationFrame(() => cropImage.classList.add('loaded'));
+        if (cropImage.src === e.target.result) showImage();
+        else { cropImage.onload = showImage; cropImage.src = e.target.result; }
+
+        emptyState.classList.add('hidden');
+        loadingState.classList.add('hidden');
+        replaceBtn.classList.remove('hidden');
+        downloadBtn.disabled = false;
+        applyCurves();
+        showToast('Фото загружено');
+      };
+      img.onerror = () => { loadingState.classList.add('hidden'); showToast('Не удалось загрузить'); };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function fitImage() {
+    if (!state.image) return;
+    const frameW = dropZone.clientWidth, frameH = dropZone.clientHeight;
+    if (frameW === 0 || frameH === 0) return requestAnimationFrame(fitImage);
+    state.baseScale = Math.max(frameW / state.imgWidth, frameH / state.imgHeight);
+    state.zoom = 1;
+    state.offsetX = (frameW - state.imgWidth * state.baseScale) / 2;
+    state.offsetY = (frameH - state.imgHeight * state.baseScale) / 2;
+    zoomSlider.value = 100; zoomValue.textContent = '100%'; zoomLevel.textContent = '100%';
+    updateSliderFill();
+  }
+
+  function updateImageTransform() {
+    if (!state.image) return;
+    const s = state.baseScale * state.zoom;
+    cropImage.style.transform = `translate3d(${state.offsetX}px, ${state.offsetY}px, 0) scale(${s})`;
+  }
+
+  function constrainOffset() {
+    if (!state.image) return;
+    const frameW = dropZone.clientWidth, frameH = dropZone.clientHeight;
+    const s = state.baseScale * state.zoom;
+    const scaledW = state.imgWidth * s, scaledH = state.imgHeight * s;
+    state.offsetX = scaledW <= frameW ? (frameW - scaledW) / 2 : Math.max(frameW - scaledW, Math.min(0, state.offsetX));
+    state.offsetY = scaledH <= frameH ? (frameH - scaledH) / 2 : Math.max(frameH - scaledH, Math.min(0, state.offsetY));
+  }
+
+  function updateFrame() {
+    const r = state.ratio.w / state.ratio.h;
+    dropZone.style.aspectRatio = r;
+    if (state.image) { requestAnimationFrame(() => { fitImage(); updateImageTransform(); }); }
+  }
+
+  function downloadImage() {
+    if (!state.image) return;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const frameW = dropZone.clientWidth, frameH = dropZone.clientHeight;
+    const s = state.baseScale * state.zoom;
+
+    let outW = Math.round(frameW / s), outH = Math.round(frameH / s);
+    if (outW > state.imgWidth) { const k = state.imgWidth / outW; outW = state.imgWidth; outH = Math.round(outH * k); }
+
+    canvas.width = outW; canvas.height = outH;
+    ctx.fillStyle = state.letterbox;
+    ctx.fillRect(0, 0, outW, outH);
+
+    const outScaleX = outW / frameW, outScaleY = outH / frameH;
+    const imgOutW = state.imgWidth * s * outScaleX, imgOutH = state.imgHeight * s * outScaleY;
+    const imgOutX = state.offsetX * outScaleX, imgOutY = state.offsetY * outScaleY;
+
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(state.image, imgOutX, imgOutY, imgOutW, imgOutH);
+
+    // Apply Curves to pixels
+    if (state.curveLUT.length === 256) {
+      const imgData = ctx.getImageData(0, 0, outW, outH);
+      const d = imgData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        d[i] = state.curveLUT[d[i]];
+        d[i+1] = state.curveLUT[d[i+1]];
+        d[i+2] = state.curveLUT[d[i+2]];
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cinematic_${state.ratio.id.replace(':', 'x')}_${Date.now()}.png`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Кадр сохранён · ' + outW + '×' + outH);
+    }, 'image/png');
+  }
+
+  function resetView() {
+    if (!state.image) return;
+    fitImage(); updateImageTransform(); showToast('Сброшено');
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    toastMessage.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+  }
+
+  // ====== КРИВЫЕ (CURVES) ======
+  function getCatmullRomY(x) {
+    const pts = [...state.curvePoints].sort((a, b) => a.x - b.x);
+    if (x <= pts[0].x) return pts[0].y;
+    if (x >= pts[pts.length - 1].x) return pts[pts.length - 1].y;
+    let i = 0;
+    while (i < pts.length - 1 && pts[i+1].x < x) i++;
+    const p0 = pts[i-1] || pts[i], p1 = pts[i], p2 = pts[i+1], p3 = pts[i+2] || pts[i+1];
+    const t = (x - p1.x) / (p2.x - p1.x), t2 = t * t, t3 = t2 * t;
+    return 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * t + (2*p0.y - 5*p1.y + 4*p2.y - p3.y) * t2 + (-p0.y + 3*p1.y - 3*p2.y + p3.y) * t3);
+  }
+
+  function updateCurveLUT() {
+    state.curveLUT = [];
+    for (let i = 0; i < 256; i++) {
+      // y=0 is top (256), y=256 is bottom (0). So out = 255 - y
+      let yVal = 255 - getCatmullRomY(i);
+      state.curveLUT.push(Math.max(0, Math.min(255, Math.round(yVal))));
+    }
+  }
+
+  function updateCurvePath() {
+    const pts = [...state.curvePoints].sort((a, b) => a.x - b.x);
+    if (pts.length < 2) return;
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i-1] || pts[i], p1 = pts[i], p2 = pts[i+1], p3 = pts[i+2] || pts[i+1];
+      const cp1x = p1.x + (p2.x - p0.x) / 6, cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6, cp2y = p2.y - (p3.y - p1.y) / 6;
+      d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+    }
+    curvePath.setAttribute('d', d);
+  }
+
+  function renderCurvePoints() {
+    state.curvePoints.sort((a, b) => a.x - b.x);
+    curvePointsGroup.innerHTML = state.curvePoints.map((p, i) => 
+      `<circle class="curve-point" data-idx="${i}" cx="${p.x}" cy="${p.y}" r="6"></circle>`
+    ).join('');
+  }
+
+  function applyCurves() {
+    updateCurveLUT();
+    const lutStr = state.curveLUT.map(v => (v / 255).toFixed(3)).join(' ');
+    document.querySelectorAll('#curvesFilter feFuncR, #curvesFilter feFuncG, #curvesFilter feFuncB').forEach(f => f.setAttribute('tableValues', lutStr));
+    if (state.image) cropImage.style.filter = 'url(#curvesFilter)';
+  }
+
+  function getSvgPoint(e) {
+    const rect = curveSvg.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    return {
+      x: Math.max(0, Math.min(256, (clientX - rect.left) / rect.width * 256)),
+      y: Math.max(0, Math.min(256, (clientY - rect.top) / rect.height * 256))
+    };
+  }
+
+  function initCurves() {
+    curveHitArea.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      const p = getSvgPoint(e);
+      // Don't add if too close to existing point
+      const tooClose = state.curvePoints.some(pt => Math.hypot(pt.x - p.x, pt.y - p.y) < 10);
+      if (!tooClose) {
+        state.curvePoints.push(p);
+        renderCurvePoints();
+        updateCurvePath();
+        applyCurves();
+      }
+    });
+
+    curvePointsGroup.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      if (e.target.classList.contains('curve-point')) {
+        const idx = parseInt(e.target.dataset.idx);
+        state.draggedPoint = state.curvePoints[idx];
+        e.target.classList.add('active');
+        try { curveSvg.setPointerCapture(e.pointerId); } catch(_) {}
+      }
+    });
+
+    curveSvg.addEventListener('pointermove', (e) => {
+      if (!state.draggedPoint) return;
+      const p = getSvgPoint(e);
+      const idx = state.curvePoints.indexOf(state.draggedPoint);
+      if (idx > 0 && idx < state.curvePoints.length - 1) {
+        const prevX = state.curvePoints[idx - 1].x;
+        const nextX = state.curvePoints[idx + 1].x;
+        state.draggedPoint.x = Math.max(prevX + 1, Math.min(nextX - 1, p.x));
+      }
+      state.draggedPoint.y = p.y;
+      renderCurvePoints();
+      updateCurvePath();
+      applyCurves();
+    });
+
+    const endCurveDrag = () => {
+      if (state.draggedPoint) {
+        document.querySelectorAll('.curve-point.active').forEach(p => p.classList.remove('active'));
+        state.draggedPoint = null;
+      }
+    };
+    curveSvg.addEventListener('pointerup', endCurveDrag);
+    curveSvg.addEventListener('pointercancel', endCurveDrag);
+
+    // Double tap to delete
+    let lastTap = 0;
+    curvePointsGroup.addEventListener('pointerdown', (e) => {
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTap;
+      if (tapLength < 300 && tapLength > 0 && e.target.classList.contains('curve-point')) {
+        const idx = parseInt(e.target.dataset.idx);
+        if (idx > 0 && idx < state.curvePoints.length - 1) {
+          state.curvePoints.splice(idx, 1);
+          renderCurvePoints();
+          updateCurvePath();
+          applyCurves();
+        }
+      }
+      lastTap = currentTime;
+    });
+
+    resetCurvesBtn.addEventListener('click', () => {
+      state.curvePoints = [{x: 0, y: 256}, {x: 256, y: 0}];
+      renderCurvePoints();
+      updateCurvePath();
+      applyCurves();
+      showToast('Кривые сброшены');
+    });
+
+    renderCurvePoints();
+    updateCurvePath();
+  }
+
+  function generateHistogram(img) {
+    const tempCanvas = document.createElement('canvas');
+    const w = 100, h = 100;
+    tempCanvas.width = w; tempCanvas.height = h;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(img, 0, 0, w, h);
+    const data = tempCtx.getImageData(0, 0, w, h).data;
+    const hist = new Array(256).fill(0);
+    for (let i = 0; i < data.length; i += 4) {
+      const lum = Math.round((data[i] + data[i+1] + data[i+2]) / 3);
+      hist[lum]++;
+    }
+    const max = Math.max(...hist);
+    let path = 'M 0 256 ';
+    for (let i = 0; i < 256; i++) {
+      const y = 256 - (hist[i] / max) * 256;
+      path += `L ${i} ${y} `;
+    }
+    path += 'L 256 256 Z';
+    document.querySelector('#curveHistogram path').setAttribute('d', path);
+  }
+
+  init();
+</script>
+</body>
+</html>
