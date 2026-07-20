@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>FRAME 2.39 — Киношное кадрирование</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,8 +16,11 @@
     --border: rgba(232, 168, 56, 0.15); --border-2: rgba(232, 168, 56, 0.08);
     --card: rgba(20, 16, 10, 0.7);
   }
-  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; -webkit-touch-callout: none; }
-  html, body { background: var(--bg); color: var(--fg); font-family: 'Manrope', sans-serif; overflow-x: hidden; -webkit-font-smoothing: antialiased; margin: 0; overscroll-behavior: none; }
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+  
+  html { overflow-x: hidden; }
+  body { background: var(--bg); color: var(--fg); font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; margin: 0; }
+  
   .font-display { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.02em; }
   .font-mono { font-family: 'JetBrains Mono', monospace; }
   
@@ -303,7 +306,6 @@
       startOffsetX = state.offsetX; startOffsetY = state.offsetY;
       try { dropZone.setPointerCapture(e.pointerId); } catch(_) {}
       dropZone.style.cursor = 'grabbing';
-      e.preventDefault();
     });
 
     dropZone.addEventListener('pointermove', (e) => {
@@ -343,7 +345,7 @@
         pinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
         pinchZoom = state.zoom;
       }
-    }, { passive: false });
+    }, { passive: true });
 
     dropZone.addEventListener('touchmove', (e) => {
       if (e.touches.length === 2 && pinchDist > 0) {
