@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>FRAME 2.39 — Киношное кадрирование</title>
+<title>FRAME 2.39 — Киношное кадрирование и Фильтры</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,7 +31,7 @@
   .glow-red { width: 500px; height: 500px; background: radial-gradient(circle, rgba(199, 90, 58, 0.18), transparent 70%); }
 
   .crop-frame { position: relative; background: #000; overflow: hidden; touch-action: none; box-shadow: 0 0 0 1px rgba(232, 168, 56, 0.25), 0 30px 80px rgba(0, 0, 0, 0.8); transition: aspect-ratio 0.4s cubic-bezier(.4,0,.2,1); }
-  .crop-image { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; user-select: none; -webkit-user-drag: none; pointer-events: none; opacity: 0; transition: opacity 0.35s ease; max-width: none; }
+  .crop-image { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform, filter; user-select: none; -webkit-user-drag: none; pointer-events: none; opacity: 0; transition: opacity 0.35s ease; max-width: none; }
   .crop-image.loaded { opacity: 1; }
 
   .guides { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
@@ -40,11 +40,9 @@
   .guides-v1 { top: 0; bottom: 0; left: 33.333%; width: 1px; } .guides-v2 { top: 0; bottom: 0; left: 66.666%; width: 1px; }
   .guides-h1 { left: 0; right: 0; top: 33.333%; height: 1px; } .guides-h2 { left: 0; right: 0; top: 66.666%; height: 1px; }
 
-  .ratio-btn { transition: all 0.25s ease; border: 1px solid var(--border); background: rgba(20, 16, 10, 0.5); position: relative; overflow: hidden; }
-  .ratio-btn::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(232, 168, 56, 0.15), transparent); opacity: 0; transition: opacity 0.3s; }
-  .ratio-btn:hover { border-color: rgba(232, 168, 56, 0.4); } .ratio-btn:hover::before { opacity: 1; }
-  .ratio-btn.active { background: linear-gradient(135deg, rgba(232, 168, 56, 0.2), rgba(199, 90, 58, 0.08)); border-color: var(--accent); color: var(--accent); }
-  .ratio-btn.active::after { content: ''; position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .ratio-btn, .preset-btn { transition: all 0.25s ease; border: 1px solid var(--border); background: rgba(20, 16, 10, 0.5); position: relative; overflow: hidden; }
+  .ratio-btn:hover, .preset-btn:hover { border-color: rgba(232, 168, 56, 0.4); }
+  .ratio-btn.active, .preset-btn.active { background: linear-gradient(135deg, rgba(232, 168, 56, 0.2), rgba(199, 90, 58, 0.08)); border-color: var(--accent); color: var(--accent); }
 
   input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--val, 0%), rgba(232, 168, 56, 0.15) var(--val, 0%), rgba(232, 168, 56, 0.15) 100%); border-radius: 2px; outline: none; }
   input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: 0 0 0 4px rgba(232, 168, 56, 0.2); border: 2px solid var(--bg); }
@@ -65,6 +63,17 @@
 </style>
 </head>
 <body class="min-h-screen relative">
+
+<!-- Hidden SVG for Tone LUT Filter (Shadows/Highlights) -->
+<svg width="0" height="0" style="position: absolute; pointer-events: none;">
+  <filter id="toneFilter">
+    <feComponentTransfer>
+      <feFuncR type="table" tableValues="0 1"/>
+      <feFuncG type="table" tableValues="0 1"/>
+      <feFuncB type="table" tableValues="0 1"/>
+    </feComponentTransfer>
+  </filter>
+</svg>
 
 <div class="grain"></div>
 <div class="bg-grid"></div>
@@ -98,7 +107,7 @@
       Кадрируй как<br/><span class="text-[var(--accent)]">кинематографист</span>
     </h1>
     <p class="text-[var(--muted)] mt-5 max-w-xl text-sm md:text-base leading-relaxed">
-      Преврати любое фото в кадр из фильма. Кадрируй, выравняй композицию и сохраняй в полном разрешении без потери качества.
+      Преврати любое фото в кадр из фильма. Кадрируй, выравняй композицию, наложи киношный фильтр и сохраняй в полном разрешении.
     </p>
   </div>
 
@@ -139,26 +148,68 @@
     </div>
 
     <aside class="space-y-4">
+      <!-- ФОРМАТЫ (СПОЙЛЕР) -->
+      <div class="bg-[var(--card)] backdrop-blur-sm border border-[var(--border)] rounded-lg p-5">
+        <button id="ratioToggle" class="flex items-center justify-between w-full">
+          <h3 class="font-display text-lg tracking-wider">СООТНОШЕНИЕ</h3>
+          <svg id="ratioArrow" class="w-4 h-4 text-[var(--accent)] transform rotate-180 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div id="ratioGridWrapper" class="grid grid-cols-2 gap-2 mt-4">
+          <!-- Заполнится скриптом -->
+        </div>
+      </div>
+
+      <!-- ФИЛЬТРЫ (ПРЕСЕТЫ) -->
       <div class="bg-[var(--card)] backdrop-blur-sm border border-[var(--border)] rounded-lg p-5">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="font-display text-lg tracking-wider">СООТНОШЕНИЕ</h3>
-          <span class="text-[10px] text-[var(--muted)] tracking-widest">ASPECT RATIO</span>
+          <h3 class="font-display text-lg tracking-wider">ФИЛЬТРЫ</h3>
+          <span class="text-[10px] text-[var(--muted)] tracking-widest">PRESETS</span>
         </div>
-        <div class="grid grid-cols-2 gap-2" id="ratioGrid"></div>
+        <div class="grid grid-cols-3 gap-2" id="presetGrid"></div>
       </div>
 
-      <div class="bg-[var(--card)] backdrop-blur-sm border border-[var(--border)] rounded-lg p-5">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-display text-lg tracking-wider">МАСШТАБ</h3>
-          <span id="zoomValue" class="font-mono text-xs text-[var(--accent)]">100%</span>
-        </div>
-        <input type="range" id="zoomSlider" min="100" max="300" value="100" step="1">
-        <div class="flex justify-between mt-2 text-[10px] text-[var(--muted)] font-mono">
-          <span>1.0x</span><span>2.0x</span><span>3.0x</span>
-        </div>
-      </div>
-
+      <!-- ЦВЕТОКОРРЕКЦИЯ (СЛАЙДЕРЫ) -->
       <div class="bg-[var(--card)] backdrop-blur-sm border border-[var(--border)] rounded-lg p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-display text-lg tracking-wider">ЦВЕТОКОРРЕКЦИЯ</h3>
+          <button id="resetFiltersBtn" class="text-[10px] text-[var(--accent)] tracking-widest hover:underline">СБРОС</button>
+        </div>
+        
+        <div>
+          <div class="flex justify-between text-xs mb-1.5"><span>Света</span><span id="highlightsVal" class="font-mono text-[var(--muted)]">0</span></div>
+          <input type="range" id="highlightsSlider" min="-100" max="100" value="0">
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1.5"><span>Тени</span><span id="shadowsVal" class="font-mono text-[var(--muted)]">0</span></div>
+          <input type="range" id="shadowsSlider" min="-100" max="100" value="0">
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1.5"><span>Экспозиция</span><span id="brightnessVal" class="font-mono text-[var(--muted)]">100%</span></div>
+          <input type="range" id="brightnessSlider" min="50" max="150" value="100">
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1.5"><span>Контраст</span><span id="contrastVal" class="font-mono text-[var(--muted)]">100%</span></div>
+          <input type="range" id="contrastSlider" min="50" max="150" value="100">
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1.5"><span>Насыщенность</span><span id="saturateVal" class="font-mono text-[var(--muted)]">100%</span></div>
+          <input type="range" id="saturateSlider" min="0" max="200" value="100">
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1.5"><span>Тепло</span><span id="sepiaVal" class="font-mono text-[var(--muted)]">0%</span></div>
+          <input type="range" id="sepiaSlider" min="0" max="100" value="0">
+        </div>
+      </div>
+
+      <!-- МАСШТАБ И СЕТКА -->
+      <div class="bg-[var(--card)] backdrop-blur-sm border border-[var(--border)] rounded-lg p-5 space-y-4">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-display text-lg tracking-wider">МАСШТАБ</h3>
+            <span id="zoomValue" class="font-mono text-xs text-[var(--accent)]">100%</span>
+          </div>
+          <input type="range" id="zoomSlider" min="100" max="300" value="100" step="1">
+        </div>
         <div class="pt-3 border-t border-[var(--border-2)]">
           <div class="flex items-center justify-between">
             <label class="text-xs text-[var(--fg)] tracking-wider cursor-pointer">Сетка композиции</label>
@@ -200,101 +251,296 @@
     { id: '16:9', label: '16 : 9', sub: 'HDTV', w: 16, h: 9 },
   ];
 
+  const PRESETS = [
+    { id: 'original', name: 'Оригинал', filter: 'brightness(100%) contrast(100%) saturate(100%) sepia(0%)' },
+    { id: 'cinema', name: 'Кино', filter: 'brightness(95%) contrast(115%) saturate(120%) sepia(15%)' },
+    { id: 'noir', name: 'Нуар', filter: 'brightness(110%) contrast(130%) saturate(0%) sepia(0%)' },
+    { id: 'vintage', name: 'Винтаж', filter: 'brightness(105%) contrast(90%) saturate(85%) sepia(40%)' },
+    { id: 'cold', name: 'Холод', filter: 'brightness(100%) contrast(105%) saturate(110%) sepia(0%) hue-rotate(180deg)' },
+    { id: 'hot', name: 'Жарко', filter: 'brightness(105%) contrast(105%) saturate(140%) sepia(30%)' },
+  ];
+
   const state = {
-    fullImage: null,      // Оригинал для скачивания
-    previewImage: null,   // Лёгкая версия для экрана
-    imgWidth: 0,          // Ширина превью
-    imgHeight: 0,         // Высота превью
-    offsetX: 0,
-    offsetY: 0,
-    zoom: 1,
-    baseScale: 1,
-    ratio: RATIOS[0],
-    fileName: '',
+    fullImage: null, previewImage: null, imgWidth: 0, imgHeight: 0,
+    offsetX: 0, offsetY: 0, zoom: 1, baseScale: 1,
+    ratio: RATIOS[0], fileName: '',
+    activePreset: 'original',
+    filters: { brightness: 100, contrast: 100, saturate: 100, sepia: 0, hue: 0, shadows: 0, highlights: 0 },
+    toneLUT: []
   };
 
   const $ = (id) => document.getElementById(id);
   const dropZone = $('dropZone');
-  const fileInput = $('fileInput');
   const cropImage = $('cropImage');
-  const emptyState = $('emptyState');
-  const loadingState = $('loadingState');
-  const replaceBtn = $('replaceBtn');
-  const zoomSlider = $('zoomSlider');
-  const zoomValue = $('zoomValue');
-  const zoomLevel = $('zoomLevel');
-  const currentRatio = $('currentRatio');
-  const fileNameEl = $('fileName');
-  const dimensionsEl = $('dimensions');
-  const downloadBtn = $('downloadBtn');
-  const resetBtn = $('resetBtn');
-  const changeBtn = $('changeBtn');
-  const guidesEl = $('guides');
-  const guidesToggle = $('guidesToggle');
-  const toast = $('toast');
-  const toastMessage = $('toastMessage');
-
+  
   function init() {
     renderRatios();
+    renderPresets();
     bindEvents();
-    updateSliderFill();
+    updateToneLUT(); // Инициализация LUT для теней и светов
+    updateSliderFill('zoomSlider');
+    updateSliderFill('brightnessSlider');
+    updateSliderFill('contrastSlider');
+    updateSliderFill('saturateSlider');
+    updateSliderFill('sepiaSlider');
+    updateSliderFill('shadowsSlider');
+    updateSliderFill('highlightsSlider');
   }
 
   function renderRatios() {
-    const grid = $('ratioGrid');
-    grid.innerHTML = RATIOS.map((r, i) => `
+    const wrapper = $('ratioGridWrapper');
+    wrapper.innerHTML = RATIOS.map((r, i) => `
       <button data-ratio="${r.id}" class="ratio-btn ${i === 0 ? 'active' : ''} rounded-md py-3 px-3 text-left">
         <div class="font-display text-base leading-none">${r.label}</div>
         <div class="text-[9px] text-[var(--muted)] tracking-wider mt-1.5">${r.sub}</div>
       </button>
     `).join('');
-    grid.querySelectorAll('button').forEach(btn => {
+    wrapper.querySelectorAll('button').forEach(btn => {
       btn.addEventListener('click', () => {
-        grid.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        wrapper.querySelectorAll('button').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const r = RATIOS.find(x => x.id === btn.dataset.ratio);
         state.ratio = r;
-        currentRatio.textContent = r.label;
+        $('currentRatio').textContent = r.label;
         updateFrame();
         showToast('Формат: ' + r.label);
       });
     });
   }
 
+  function renderPresets() {
+    const grid = $('presetGrid');
+    grid.innerHTML = PRESETS.map((p, i) => `
+      <button data-preset="${p.id}" class="preset-btn ${i === 0 ? 'active' : ''} rounded-md py-2.5 px-2 text-center">
+        <div class="text-xs font-medium">${p.name}</div>
+      </button>
+    `).join('');
+    grid.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        grid.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const preset = PRESETS.find(x => x.id === btn.dataset.preset);
+        state.activePreset = preset.id;
+        
+        if (preset.id !== 'original') {
+          applyFilterString(preset.filter);
+        } else {
+          resetFilterSliders();
+        }
+      });
+    });
+  }
+
+  function applyFilterString(filterStr) {
+    const match = {
+      brightness: filterStr.match(/brightness\((\d+)%\)/),
+      contrast: filterStr.match(/contrast\((\d+)%\)/),
+      saturate: filterStr.match(/saturate\((\d+)%\)/),
+      sepia: filterStr.match(/sepia\((\d+)%\)/),
+      hue: filterStr.match(/hue-rotate\((\d+)deg\)/)
+    };
+    
+    state.filters.brightness = match.brightness ? parseInt(match.brightness[1]) : 100;
+    state.filters.contrast = match.contrast ? parseInt(match.contrast[1]) : 100;
+    state.filters.saturate = match.saturate ? parseInt(match.saturate[1]) : 100;
+    state.filters.sepia = match.sepia ? parseInt(match.sepia[1]) : 0;
+    state.filters.hue = match.hue ? parseInt(match.hue[1]) : 0;
+    
+    $('brightnessSlider').value = state.filters.brightness;
+    $('contrastSlider').value = state.filters.contrast;
+    $('saturateSlider').value = state.filters.saturate;
+    $('sepiaSlider').value = state.filters.sepia;
+    
+    $('brightnessVal').textContent = state.filters.brightness + '%';
+    $('contrastVal').textContent = state.filters.contrast + '%';
+    $('saturateVal').textContent = state.filters.saturate + '%';
+    $('sepiaVal').textContent = state.filters.sepia + '%';
+    
+    updateSliderFill('brightnessSlider');
+    updateSliderFill('contrastSlider');
+    updateSliderFill('saturateSlider');
+    updateSliderFill('sepiaSlider');
+    
+    applyFilters();
+  }
+
+  function resetFilterSliders() {
+    state.filters.brightness = 100;
+    state.filters.contrast = 100;
+    state.filters.saturate = 100;
+    state.filters.sepia = 0;
+    state.filters.hue = 0;
+    state.filters.shadows = 0;
+    state.filters.highlights = 0;
+    
+    $('brightnessSlider').value = 100;
+    $('contrastSlider').value = 100;
+    $('saturateSlider').value = 100;
+    $('sepiaSlider').value = 0;
+    $('shadowsSlider').value = 0;
+    $('highlightsSlider').value = 0;
+    
+    $('brightnessVal').textContent = '100%';
+    $('contrastVal').textContent = '100%';
+    $('saturateVal').textContent = '100%';
+    $('sepiaVal').textContent = '0%';
+    $('shadowsVal').textContent = '0';
+    $('highlightsVal').textContent = '0';
+    
+    updateSliderFill('brightnessSlider');
+    updateSliderFill('contrastSlider');
+    updateSliderFill('saturateSlider');
+    updateSliderFill('sepiaSlider');
+    updateSliderFill('shadowsSlider');
+    updateSliderFill('highlightsSlider');
+    
+    updateToneLUT();
+    applyFilters();
+  }
+
+  // ====== ЛОГИКА ТЕНЕЙ И СВЕТОВ (LUT) ======
+  function updateToneLUT() {
+    const sh = state.filters.shadows;   // -100 to 100
+    const hi = state.filters.highlights; // -100 to 100
+    
+    // Точки кривой (вход, выход)
+    const pts = [
+      {x: 0, y: 0},
+      {x: 64, y: 64 + sh * 0.6},
+      {x: 128, y: 128 + sh * 0.2 + hi * 0.2},
+      {x: 192, y: 192 + hi * 0.6},
+      {x: 255, y: 255}
+    ];
+    
+    const lut = new Array(256);
+    for (let i=0; i<256; i++) {
+      let y = 0;
+      if (i <= pts[0].x) y = pts[0].y;
+      else if (i <= pts[1].x) {
+        const t = (i - pts[0].x) / (pts[1].x - pts[0].x);
+        y = pts[0].y + t * (pts[1].y - pts[0].y);
+      } else if (i <= pts[2].x) {
+        const t = (i - pts[1].x) / (pts[2].x - pts[1].x);
+        y = pts[1].y + t * (pts[2].y - pts[1].y);
+      } else if (i <= pts[3].x) {
+        const t = (i - pts[2].x) / (pts[3].x - pts[2].x);
+        y = pts[2].y + t * (pts[3].y - pts[2].y);
+      } else if (i <= pts[4].x) {
+        const t = (i - pts[3].x) / (pts[4].x - pts[3].x);
+        y = pts[3].y + t * (pts[4].y - pts[3].y);
+      } else y = pts[4].y;
+      
+      lut[i] = Math.max(0, Math.min(255, Math.round(y)));
+    }
+    state.toneLUT = lut;
+    
+    // Применяем к SVG фильтру для предпросмотра
+    const tableValues = lut.map(v => (v / 255).toFixed(3)).join(' ');
+    document.querySelectorAll('#toneFilter feFuncR, #toneFilter feFuncG, #toneFilter feFuncB').forEach(f => f.setAttribute('tableValues', tableValues));
+  }
+
+  function applyFilters() {
+    const f = state.filters;
+    cropImage.style.filter = `url(#toneFilter) brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) sepia(${f.sepia}%) hue-rotate(${f.hue}deg)`;
+  }
+
   function bindEvents() {
-    fileInput.addEventListener('change', (e) => {
+    $('fileInput').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) loadFile(file);
       e.target.value = '';
     });
 
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drop-zone-active'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone-active'));
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('drop-zone-active');
-      const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith('image/')) loadFile(file);
+    $('emptyState').addEventListener('click', () => $('fileInput').click());
+    $('replaceBtn').addEventListener('click', (e) => { e.stopPropagation(); $('fileInput').click(); });
+    $('changeBtn').addEventListener('click', () => $('fileInput').click());
+
+    // Спойлер соотношений
+    let ratioOpen = true;
+    $('ratioToggle').addEventListener('click', () => {
+      ratioOpen = !ratioOpen;
+      const grid = $('ratioGridWrapper');
+      const arrow = $('ratioArrow');
+      if (ratioOpen) {
+        grid.classList.remove('hidden');
+        arrow.classList.remove('rotate-0');
+        arrow.classList.add('rotate-180');
+      } else {
+        grid.classList.add('hidden');
+        arrow.classList.remove('rotate-180');
+        arrow.classList.add('rotate-0');
+      }
     });
 
-    emptyState.addEventListener('click', () => fileInput.click());
-    replaceBtn.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
-    changeBtn.addEventListener('click', () => fileInput.click());
-
-    zoomSlider.addEventListener('input', (e) => {
-      const v = parseInt(e.target.value);
-      state.zoom = v / 100;
-      zoomValue.textContent = v + '%';
-      zoomLevel.textContent = v + '%';
+    $('zoomSlider').addEventListener('input', (e) => {
+      state.zoom = parseInt(e.target.value) / 100;
+      $('zoomValue').textContent = e.target.value + '%';
+      $('zoomLevel').textContent = e.target.value + '%';
       constrainOffset();
       updateImageTransform();
-      updateSliderFill();
+      updateSliderFill('zoomSlider');
     });
 
-    downloadBtn.addEventListener('click', downloadImage);
-    resetBtn.addEventListener('click', resetView);
+    // Слайдеры фильтров
+    $('brightnessSlider').addEventListener('input', (e) => {
+      state.filters.brightness = parseInt(e.target.value);
+      $('brightnessVal').textContent = e.target.value + '%';
+      updateSliderFill('brightnessSlider');
+      applyFilters();
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    });
+    
+    $('contrastSlider').addEventListener('input', (e) => {
+      state.filters.contrast = parseInt(e.target.value);
+      $('contrastVal').textContent = e.target.value + '%';
+      updateSliderFill('contrastSlider');
+      applyFilters();
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    });
+    
+    $('saturateSlider').addEventListener('input', (e) => {
+      state.filters.saturate = parseInt(e.target.value);
+      $('saturateVal').textContent = e.target.value + '%';
+      updateSliderFill('saturateSlider');
+      applyFilters();
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    });
+    
+    $('sepiaSlider').addEventListener('input', (e) => {
+      state.filters.sepia = parseInt(e.target.value);
+      $('sepiaVal').textContent = e.target.value + '%';
+      updateSliderFill('sepiaSlider');
+      applyFilters();
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    });
 
-    // ====== ОПТИМИЗИРОВАННОЕ ПЕРЕТАСКИВАНИЕ ======
+    $('shadowsSlider').addEventListener('input', (e) => {
+      state.filters.shadows = parseInt(e.target.value);
+      $('shadowsVal').textContent = e.target.value;
+      updateSliderFill('shadowsSlider');
+      updateToneLUT();
+      applyFilters();
+    });
+
+    $('highlightsSlider').addEventListener('input', (e) => {
+      state.filters.highlights = parseInt(e.target.value);
+      $('highlightsVal').textContent = e.target.value;
+      updateSliderFill('highlightsSlider');
+      updateToneLUT();
+      applyFilters();
+    });
+
+    $('resetFiltersBtn').addEventListener('click', () => {
+      resetFilterSliders();
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('[data-preset="original"]').classList.add('active');
+      showToast('Фильтры сброшены');
+    });
+
+    $('downloadBtn').addEventListener('click', downloadImage);
+    $('resetBtn').addEventListener('click', resetView);
+
+    // ====== ПЕРЕТАСКИВАНИЕ ======
     let isDragging = false, startX = 0, startY = 0, startOffsetX = 0, startOffsetY = 0;
     let rafId = null;
 
@@ -314,7 +560,6 @@
       state.offsetX = startOffsetX + dx;
       state.offsetY = startOffsetY + dy;
       
-      // Используем requestAnimationFrame для мгновенного и плавного отклика
       if (!rafId) {
         rafId = requestAnimationFrame(() => {
           constrainOffset();
@@ -337,9 +582,8 @@
     dropZone.addEventListener('pointercancel', endDrag);
     dropZone.addEventListener('pointerleave', endDrag);
 
-    // ====== PINCH ZOOM (ДЛЯ МOBILE) ======
+    // ====== PINCH ZOOM ======
     let pinchDist = 0, pinchZoom = 1;
-
     dropZone.addEventListener('touchstart', (e) => {
       if (e.touches.length === 2) {
         pinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
@@ -355,30 +599,29 @@
         let newZoom = Math.max(1, Math.min(3, pinchZoom * scale));
         state.zoom = newZoom;
         const v = Math.round(newZoom * 100);
-        zoomSlider.value = v; zoomValue.textContent = v + '%'; zoomLevel.textContent = v + '%';
-        constrainOffset(); updateImageTransform(); updateSliderFill();
+        $('zoomSlider').value = v; $('zoomValue').textContent = v + '%'; $('zoomLevel').textContent = v + '%';
+        constrainOffset(); updateImageTransform(); updateSliderFill('zoomSlider');
       }
     }, { passive: false });
 
-    // ====== КОЛЕСО МЫШИ (ДЛЯ DESKTOP) ======
     dropZone.addEventListener('wheel', (e) => {
       if (!state.previewImage) return;
       e.preventDefault();
       const delta = e.deltaY > 0 ? -0.05 : 0.05;
       state.zoom = Math.max(1, Math.min(3, state.zoom + delta));
       const v = Math.round(state.zoom * 100);
-      zoomSlider.value = v; zoomValue.textContent = v + '%'; zoomLevel.textContent = v + '%';
-      constrainOffset(); updateImageTransform(); updateSliderFill();
+      $('zoomSlider').value = v; $('zoomValue').textContent = v + '%'; $('zoomLevel').textContent = v + '%';
+      constrainOffset(); updateImageTransform(); updateSliderFill('zoomSlider');
     }, { passive: false });
 
-    guidesToggle.addEventListener('click', () => {
-      const isOn = guidesToggle.dataset.active === 'true';
-      guidesToggle.dataset.active = !isOn;
-      guidesToggle.style.background = !isOn ? 'var(--accent)' : 'var(--bg-3)';
-      const dot = guidesToggle.querySelector('.dot');
+    $('guidesToggle').addEventListener('click', () => {
+      const isOn = $('guidesToggle').dataset.active === 'true';
+      $('guidesToggle').dataset.active = !isOn;
+      $('guidesToggle').style.background = !isOn ? 'var(--accent)' : 'var(--bg-3)';
+      const dot = $('guidesToggle').querySelector('.dot');
       dot.style.transform = !isOn ? 'translateX(20px)' : 'translateX(0)';
       dot.style.background = !isOn ? '#1a1208' : 'var(--muted)';
-      guidesEl.classList.toggle('active', !isOn);
+      $('guides').classList.toggle('active', !isOn);
     });
 
     let resizeTimer;
@@ -390,28 +633,27 @@
     });
   }
 
-  function updateSliderFill() {
-    const v = zoomSlider.value, min = zoomSlider.min || 0, max = zoomSlider.max || 100;
+  function updateSliderFill(id) {
+    const slider = $(id);
+    const v = slider.value, min = slider.min || 0, max = slider.max || 100;
     const pct = ((v - min) / (max - min)) * 100;
-    zoomSlider.style.setProperty('--val', pct + '%');
+    slider.style.setProperty('--val', pct + '%');
   }
 
-  // ====== ЗАГРУЗКА И ОПТИМИЗАЦИЯ ФОТО ======
   function loadFile(file) {
     if (!file.type.startsWith('image/')) return showToast('Поддерживаются только изображения');
-    loadingState.classList.remove('hidden');
+    $('loadingState').classList.remove('hidden');
     state.fileName = file.name;
-    fileNameEl.textContent = file.name;
+    $('fileName').textContent = file.name;
 
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        state.fullImage = img; // Сохраняем оригинал для экспорта
+        state.fullImage = img; 
         const fullW = img.naturalWidth, fullH = img.naturalHeight;
-        dimensionsEl.textContent = `${fullW} × ${fullH}`;
+        $('dimensions').textContent = `${fullW} × ${fullH}`;
 
-        // Создаем уменьшенную копию для превью, чтобы не тормозило перетаскивание
         const maxPreviewDim = 1600;
         if (Math.max(fullW, fullH) > maxPreviewDim) {
           const scale = maxPreviewDim / Math.max(fullW, fullH);
@@ -437,7 +679,7 @@
           setupPreviewImage(e.target.result);
         }
       };
-      img.onerror = () => { loadingState.classList.add('hidden'); showToast('Не удалось загрузить'); };
+      img.onerror = () => { $('loadingState').classList.add('hidden'); showToast('Не удалось загрузить'); };
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);
@@ -450,15 +692,16 @@
     
     fitImage();
     updateImageTransform();
+    applyFilters();
 
     const showImage = () => requestAnimationFrame(() => cropImage.classList.add('loaded'));
     if (cropImage.src === src) showImage();
     else { cropImage.onload = showImage; cropImage.src = src; }
 
-    emptyState.classList.add('hidden');
-    loadingState.classList.add('hidden');
-    replaceBtn.classList.remove('hidden');
-    downloadBtn.disabled = false;
+    $('emptyState').classList.add('hidden');
+    $('loadingState').classList.add('hidden');
+    $('replaceBtn').classList.remove('hidden');
+    $('downloadBtn').disabled = false;
     showToast('Фото загружено');
   }
 
@@ -470,8 +713,8 @@
     state.zoom = 1;
     state.offsetX = (frameW - state.imgWidth * state.baseScale) / 2;
     state.offsetY = (frameH - state.imgHeight * state.baseScale) / 2;
-    zoomSlider.value = 100; zoomValue.textContent = '100%'; zoomLevel.textContent = '100%';
-    updateSliderFill();
+    $('zoomSlider').value = 100; $('zoomValue').textContent = '100%'; $('zoomLevel').textContent = '100%';
+    updateSliderFill('zoomSlider');
   }
 
   function updateImageTransform() {
@@ -495,7 +738,7 @@
     if (state.previewImage) { requestAnimationFrame(() => { fitImage(); updateImageTransform(); }); }
   }
 
-  // ====== СКАЧИВАНИЕ (Использует оригинал) ======
+  // ====== СКАЧИВАНИЕ С ФИЛЬТРАМИ И LUT ======
   function downloadImage() {
     if (!state.fullImage) return;
     const canvas = document.createElement('canvas');
@@ -503,12 +746,10 @@
     const frameW = dropZone.clientWidth, frameH = dropZone.clientHeight;
     const s = state.baseScale * state.zoom;
 
-    // Рассчитываем масштаб для экспорта (исходя из оригинального размера)
     const exportScale = state.fullImage.naturalWidth / state.imgWidth;
     let outW = Math.round((frameW / s) * exportScale);
     let outH = Math.round((frameH / s) * exportScale);
 
-    // Ограничиваем максимальным размером оригинала
     if (outW > state.fullImage.naturalWidth) {
       const k = state.fullImage.naturalWidth / outW;
       outW = state.fullImage.naturalWidth;
@@ -518,22 +759,39 @@
     canvas.width = outW;
     canvas.height = outH;
 
-    // Черные полосы
+    // 1. Черные полосы (letterbox) БЕЗ фильтров
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, outW, outH);
 
-    // Координаты для рисования оригинального изображения
+    // 2. Применяем CSS-фильтры к контексту Canvas
+    const f = state.filters;
+    ctx.filter = `brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) sepia(${f.sepia}%) hue-rotate(${f.hue}deg)`;
+
+    // 3. Рисуем фото (оно будет с CSS-фильтром)
     const outScaleX = outW / frameW;
     const outScaleY = outH / frameH;
-
     const imgOutX = state.offsetX * outScaleX;
     const imgOutY = state.offsetY * outScaleY;
-    const imgOutW = state.fullImage.naturalWidth; // Оригинальный размер
+    const imgOutW = state.fullImage.naturalWidth; 
     const imgOutH = state.fullImage.naturalHeight;
 
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(state.fullImage, imgOutX, imgOutY, imgOutW, imgOutH);
+    
+    ctx.filter = 'none'; // Сбрасываем фильтр
+
+    // 4. Применяем LUT (Тени и Света) попиксельно
+    if (state.toneLUT.length === 256) {
+      const imgData = ctx.getImageData(0, 0, outW, outH);
+      const d = imgData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        d[i] = state.toneLUT[d[i]];
+        d[i+1] = state.toneLUT[d[i+1]];
+        d[i+2] = state.toneLUT[d[i+2]];
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
 
     canvas.toBlob((blob) => {
       const url = URL.createObjectURL(blob);
@@ -553,10 +811,10 @@
 
   let toastTimer;
   function showToast(msg) {
-    toastMessage.textContent = msg;
-    toast.classList.add('show');
+    $('toastMessage').textContent = msg;
+    $('toast').classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+    toastTimer = setTimeout(() => $('toast').classList.remove('show'), 2400);
   }
 
   init();
