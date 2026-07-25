@@ -41,7 +41,8 @@
   .btn-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
   .btn-save { background: var(--accent); color: #000; font-weight: 700; padding: 8px 20px; border-radius: 20px; font-size: 14px; }
 
-  .canvas-area { flex: 1; position: relative; overflow: hidden; background: #121212; display: flex; align-items: center; justify-content: center; padding-top: calc(80px + env(safe-area-inset-top)); padding-bottom: calc(280px + env(safe-area-inset-bottom)); }
+  /* ИСПРАВЛЕНО: Увеличены отступы снизу до 300px, чтобы панель не залезала на фото */
+  .canvas-area { flex: 1; position: relative; overflow: hidden; background: #121212; display: flex; align-items: center; justify-content: center; padding-top: calc(80px + env(safe-area-inset-top)); padding-bottom: calc(300px + env(safe-area-inset-bottom)); }
   .crop-frame { position: relative; overflow: hidden; background: #000; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 0 0 9999px rgba(0,0,0,0.6); touch-action: none; }
   .crop-image { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform, filter; user-select: none; -webkit-user-drag: none; pointer-events: none; max-width: none; }
 
@@ -51,7 +52,8 @@
   .guides-v1 { top: 0; bottom: 0; left: 33.333%; width: 1px; } .guides-v2 { top: 0; bottom: 0; left: 66.666%; width: 1px; }
   .guides-h1 { left: 0; right: 0; top: 33.333%; height: 1px; } .guides-h2 { left: 0; right: 0; top: 66.666%; height: 1px; }
 
-  .floating-panel { position: absolute; bottom: calc(90px + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 40; padding: 0 12px; }
+  /* ИСПРАВЛЕНО: Панель опущена к самому низу (80px) */
+  .floating-panel { position: absolute; bottom: calc(80px + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 40; padding: 0 12px; }
   .slider-carousel { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 8px 4px 12px; }
   .slider-carousel::-webkit-scrollbar { display: none; }
   .slider-card { min-width: 75vw; max-width: 85vw; scroll-snap-align: center; background: var(--lr-panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -338,7 +340,11 @@
 
     document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
-    $('zoomSlider').addEventListener('input', (e) => { state.zoom = parseInt(e.target.value) / 100; $('zoomVal').textContent = e.target.value + '%'; constrainOffset(); updateImageTransform(); });
+    $('zoomSlider').addEventListener('input', (e) => { 
+      state.zoom = parseInt(e.target.value) / 100; 
+      $('zoomVal').textContent = e.target.value + '%'; 
+      constrainOffset(); updateImageTransform(); updateOutputRes(); 
+    });
     $('brightnessSlider').addEventListener('input', (e) => { state.filters.brightness = parseInt(e.target.value); $('brightnessVal').textContent = e.target.value + '%'; applyFilters(); clearPresets(); });
     $('contrastSlider').addEventListener('input', (e) => { state.filters.contrast = parseInt(e.target.value); $('contrastVal').textContent = e.target.value + '%'; applyFilters(); clearPresets(); });
     $('shadowsSlider').addEventListener('input', (e) => { state.filters.shadows = parseInt(e.target.value); $('shadowsVal').textContent = e.target.value; updateToneLUT(); applyFilters(); });
@@ -362,9 +368,13 @@
       if (!isDragging) return;
       state.offsetX = startOffsetX + (e.clientX - startX);
       state.offsetY = startOffsetY + (e.clientY - startY);
-      if (!rafId) { rafId = requestAnimationFrame(() => { constrainOffset(); updateImageTransform(); rafId = null; }); }
+      if (!rafId) { 
+        rafId = requestAnimationFrame(() => { 
+          constrainOffset(); updateImageTransform(); updateOutputRes(); rafId = null; 
+        }); 
+      }
     });
-    const endDrag = () => { if (isDragging) { isDragging = false; if (rafId) { cancelAnimationFrame(rafId); rafId = null; } constrainOffset(); updateImageTransform(); } };
+    const endDrag = () => { if (isDragging) { isDragging = false; if (rafId) { cancelAnimationFrame(rafId); rafId = null; } constrainOffset(); updateImageTransform(); updateOutputRes(); } };
     cropFrame.addEventListener('pointerup', endDrag); cropFrame.addEventListener('pointercancel', endDrag); cropFrame.addEventListener('pointerleave', endDrag);
 
     let pinchDist = 0, pinchZoom = 1;
@@ -376,7 +386,7 @@
         state.zoom = newZoom;
         const v = Math.round(newZoom * 100);
         $('zoomSlider').value = v; $('zoomVal').textContent = v + '%';
-        constrainOffset(); updateImageTransform();
+        constrainOffset(); updateImageTransform(); updateOutputRes();
       }
     }, { passive: false });
 
@@ -476,7 +486,6 @@
 
   function updateFrame() {
     const r = state.ratio.w / state.ratio.h;
-    // ИСПРАВЛЕНО: Берём реальные отступы CSS, чтобы фото никогда не вылезало за экран
     const cs = getComputedStyle(canvasArea);
     const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
     const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
@@ -505,23 +514,26 @@
     }
   }
 
-  // ИСПРАВЛЕНО: Функция показа финального разрешения фото
+  // ИСПРАВЛЕНО: Точный расчёт вырезаемого разрешения
   function updateOutputRes() {
-    if (!state.fullImage || !state.previewImage) return;
-    const frameW = cropFrame.clientWidth;
-    const frameH = cropFrame.clientHeight;
+    if (!state.fullImage || !state.previewImage || !cropFrame.clientWidth) return;
     
-    const exportScale = state.fullImage.naturalWidth / state.imgWidth;
-    let outW = Math.round(frameW * exportScale);
-    let outH = Math.round(frameH * exportScale);
+    // Масштаб: 1 пиксель экрана = origScale пикселей оригинала
+    const origScale = state.fullImage.naturalWidth / (state.imgWidth * state.baseScale * state.zoom);
     
-    if (outW > state.fullImage.naturalWidth) {
-      const k = state.fullImage.naturalWidth / outW;
-      outW = state.fullImage.naturalWidth;
-      outH = Math.round(outH * k);
-    }
+    let sw = cropFrame.clientWidth * origScale;
+    let sh = cropFrame.clientHeight * origScale;
     
-    $('outputRes').textContent = `${outW}×${outH}`;
+    // Корректируем, чтобы не выйти за рамки оригинала
+    let sx = -state.offsetX * origScale;
+    let sy = -state.offsetY * origScale;
+    
+    if (sx < 0) { sw += sx; sx = 0; }
+    if (sy < 0) { sh += sy; sy = 0; }
+    if (sx + sw > state.fullImage.naturalWidth) { sw = state.fullImage.naturalWidth - sx; }
+    if (sy + sh > state.fullImage.naturalHeight) { sh = state.fullImage.naturalHeight - sy; }
+    
+    $('outputRes').textContent = `${Math.round(sw)}×${Math.round(sh)}`;
   }
 
   function fitImage() {
@@ -550,24 +562,45 @@
     state.offsetY = scaledH <= frameH ? (frameH - scaledH) / 2 : Math.max(frameH - scaledH, Math.min(0, state.offsetY));
   }
 
+  // ИСПРАВЛЕНО: Вырезает ровно ту часть, что в рамке, с оригинальным качеством
   function downloadImage() {
     if (!state.fullImage) return;
-    const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
-    const frameW = cropFrame.clientWidth, frameH = cropFrame.clientHeight;
-    const exportScale = state.fullImage.naturalWidth / state.imgWidth;
-    let outW = Math.round(frameW * exportScale), outH = Math.round(frameH * exportScale);
-    canvas.width = outW; canvas.height = outH;
-    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, outW, outH);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    const origScale = state.fullImage.naturalWidth / (state.imgWidth * state.baseScale * state.zoom);
+    
+    // Координаты и размеры вырезаемой области на оригинале
+    let sx = -state.offsetX * origScale;
+    let sy = -state.offsetY * origScale;
+    let sw = cropFrame.clientWidth * origScale;
+    let sh = cropFrame.clientHeight * origScale;
+    
+    // Защита от выхода за границы
+    if (sx < 0) { sw += sx; sx = 0; }
+    if (sy < 0) { sh += sy; sy = 0; }
+    if (sx + sw > state.fullImage.naturalWidth) { sw = state.fullImage.naturalWidth - sx; }
+    if (sy + sh > state.fullImage.naturalHeight) { sh = state.fullImage.naturalHeight - sy; }
+    
+    sw = Math.max(1, Math.round(sw));
+    sh = Math.max(1, Math.round(sh));
+    sx = Math.max(0, Math.round(sx));
+    sy = Math.max(0, Math.round(sy));
+    
+    canvas.width = sw; canvas.height = sh;
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, sw, sh);
 
     const f = state.filters;
     ctx.filter = `brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) sepia(${f.sepia}%) hue-rotate(${f.hue}deg)`;
-    const imgOutX = state.offsetX * exportScale, imgOutY = state.offsetY * exportScale;
+    
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(state.fullImage, imgOutX, imgOutY, state.fullImage.naturalWidth, state.fullImage.naturalHeight);
+    
+    // Вырезаем область (sx, sy, sw, sh) и рисуем её на холсте (0, 0, sw, sh)
+    ctx.drawImage(state.fullImage, sx, sy, sw, sh, 0, 0, sw, sh);
     ctx.filter = 'none';
 
     if (state.toneLUT.length === 256) {
-      const imgData = ctx.getImageData(0, 0, outW, outH), d = imgData.data;
+      const imgData = ctx.getImageData(0, 0, sw, sh), d = imgData.data;
       for (let i = 0; i < d.length; i += 4) { d[i] = state.toneLUT[d[i]]; d[i+1] = state.toneLUT[d[i+1]]; d[i+2] = state.toneLUT[d[i+2]]; }
       ctx.putImageData(imgData, 0, 0);
     }
@@ -577,7 +610,7 @@
       const a = document.createElement('a');
       a.href = url; a.download = `cinematic_${state.ratio.id.replace(':', 'x')}_${Date.now()}.png`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      URL.revokeObjectURL(url); showToast('Сохранено: ' + outW + '×' + outH);
+      URL.revokeObjectURL(url); showToast('Сохранено: ' + sw + '×' + sh);
     }, 'image/png');
   }
 
