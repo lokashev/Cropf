@@ -1,5 +1,5 @@
 // ПОМЕНЯЙ ЦИФРУ ВЕРСИИ ЗДЕСЬ ПРИ КАЖДОМ ОБНОВЛЕНИИ (v2, v3, v4...)
-const CACHE_NAME = 'frame-2-39-v3'; 
+const CACHE_NAME = 'frame-2-39-v4'; 
 const urlsToCache = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', event => {
