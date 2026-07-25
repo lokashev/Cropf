@@ -37,12 +37,10 @@
   #editorScreen { position: fixed; inset: 0; display: none; flex-direction: column; background: #000; z-index: 20; }
   #editorScreen.active { display: flex; }
   
-  /* ИСПРАВЛЕНО: Добавлен отступ сверху для статус-бара айфона */
   .top-bar { padding: 12px 16px; padding-top: calc(12px + env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); position: absolute; top: 0; left: 0; right: 0; z-index: 30; }
   .btn-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
   .btn-save { background: var(--accent); color: #000; font-weight: 700; padding: 8px 20px; border-radius: 20px; font-size: 14px; }
 
-  /* ИСПРАВЛЕНО: Увеличены отступы с учетом безопасных зон */
   .canvas-area { flex: 1; position: relative; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; padding-top: calc(60px + env(safe-area-inset-top)); padding-bottom: calc(180px + env(safe-area-inset-bottom)); }
   .crop-frame { position: relative; overflow: hidden; background: #000; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); touch-action: none; }
   .crop-image { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform, filter; user-select: none; -webkit-user-drag: none; pointer-events: none; max-width: none; }
@@ -66,7 +64,6 @@
   input[type="range"].lr-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; cursor: pointer; box-shadow: 0 0 0 4px rgba(232, 168, 56, 0.2); }
   input[type="range"].lr-slider::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #fff; cursor: pointer; border: none; }
 
-  /* ИСПРАВЛЕНО: Высота панели и отступ для индикатора Home */
   .bottom-bar { height: calc(70px + env(safe-area-inset-bottom)); background: #0a0a0a; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-around; align-items: flex-start; padding-top: 10px; padding-bottom: env(safe-area-inset-bottom); z-index: 50; position: relative; }
   .tab-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #666; background: none; border: none; padding: 8px 16px; transition: color 0.2s; }
   .tab-btn.active { color: var(--accent); }
@@ -79,8 +76,19 @@
   .preset-btn { background: rgba(255,255,255,0.05); border: 1px solid transparent; border-radius: 8px; padding: 10px 4px; text-align: center; transition: all 0.2s; font-size: 12px; color: #fff; }
   .preset-btn.active { background: rgba(232, 168, 56, 0.15); border-color: var(--accent); color: var(--accent); }
 
-  .toast { transform: translate(-50%, 100px); transition: transform 0.4s cubic-bezier(.4,0,.2,1); bottom: calc(24px + env(safe-area-inset-bottom) + 70px); } 
-  .toast.show { transform: translate(-50%, 0); }
+  /* ИСПРАВЛЕНО: Полное скрытие уведомления */
+  .toast { 
+    opacity: 0; 
+    visibility: hidden; 
+    transform: translate(-50%, 20px); 
+    transition: all 0.4s cubic-bezier(.4,0,.2,1); 
+    bottom: calc(100px + env(safe-area-inset-bottom)); 
+  } 
+  .toast.show { 
+    opacity: 1; 
+    visibility: visible; 
+    transform: translate(-50%, 0); 
+  }
 </style>
 </head>
 <body>
@@ -387,7 +395,6 @@
           UTIF.decodeImage(buffer, ifds[0]);
           const rgba = UTIF.toRGBA8(ifds[0]);
           
-          // ИСПРАВЛЕНО: Чтение ориентации EXIF (тег 274)
           const w = ifds[0].width, h = ifds[0].height;
           const orientation = ifds[0].t274 ? ifds[0].t274[0] : 1; 
           
@@ -398,7 +405,6 @@
           for (let i = 0; i < rgba.length; i++) imgData.data[i] = rgba[i];
           tempCtx.putImageData(imgData, 0, 0);
           
-          // Поворот canvas в зависимости от ориентации
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
           if (orientation === 6 || orientation === 8) {
