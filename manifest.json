@@ -1,0 +1,17 @@
+{
+  "name": "FRAME 2.39 Cinematic Crop",
+  "short_name": "FRAME 2.39",
+  "description": "Киношное кадрирование фото",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2989/2989988.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

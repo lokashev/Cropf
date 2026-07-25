@@ -3,9 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<!-- Мета-теги для PWA -->
+<meta name="theme-color" content="#050505">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
 <title>FRAME 2.39 — Киношное кадрирование</title>
+
 <script src="https://cdn.tailwindcss.com"></script>
-<!-- Библиотеки для HEIC и RAW (DNG/TIFF) -->
 <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.min.js"></script>
 
@@ -27,11 +32,9 @@
   .font-display { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.02em; }
   .font-mono { font-family: 'JetBrains Mono', monospace; }
 
-  /* Upload Screen */
   #uploadScreen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; padding: 20px; background: radial-gradient(circle at 50% 30%, #1a1208, #050505); }
   .upload-box { border: 1px dashed var(--accent); background: rgba(232, 168, 56, 0.03); }
 
-  /* Editor Screen */
   #editorScreen { position: fixed; inset: 0; display: none; flex-direction: column; background: #000; z-index: 20; }
   #editorScreen.active { display: flex; }
   
@@ -40,8 +43,6 @@
   .btn-save { background: var(--accent); color: #000; font-weight: 700; padding: 8px 20px; border-radius: 20px; font-size: 14px; }
 
   .canvas-area { flex: 1; position: relative; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; padding-top: 60px; padding-bottom: 180px; }
-  
-  /* ВИДИМАЯ РАМКА КАДРИРОВАНИЯ */
   .crop-frame { position: relative; overflow: hidden; background: #000; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); touch-action: none; }
   .crop-image { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform, filter; user-select: none; -webkit-user-drag: none; pointer-events: none; max-width: none; }
 
@@ -51,7 +52,6 @@
   .guides-v1 { top: 0; bottom: 0; left: 33.333%; width: 1px; } .guides-v2 { top: 0; bottom: 0; left: 66.666%; width: 1px; }
   .guides-h1 { left: 0; right: 0; top: 33.333%; height: 1px; } .guides-h2 { left: 0; right: 0; top: 66.666%; height: 1px; }
 
-  /* Floating Controls (Sliders) */
   .floating-panel { position: absolute; bottom: 80px; left: 0; right: 0; z-index: 40; padding: 0 12px; }
   .slider-carousel { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 8px 4px 12px; }
   .slider-carousel::-webkit-scrollbar { display: none; }
@@ -65,13 +65,11 @@
   input[type="range"].lr-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; cursor: pointer; box-shadow: 0 0 0 4px rgba(232, 168, 56, 0.2); }
   input[type="range"].lr-slider::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #fff; cursor: pointer; border: none; }
 
-  /* Bottom Tab Bar */
   .bottom-bar { height: 70px; background: #0a0a0a; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 50; position: relative; }
   .tab-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #666; background: none; border: none; padding: 8px 16px; transition: color 0.2s; }
   .tab-btn.active { color: var(--accent); }
   .tab-btn span { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-  /* Crop Panel Content */
   .crop-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .ratio-btn { background: rgba(255,255,255,0.05); border: 1px solid transparent; border-radius: 8px; padding: 8px 4px; text-align: center; transition: all 0.2s; color: #fff; }
   .ratio-btn.active { background: rgba(232, 168, 56, 0.15); border-color: var(--accent); color: var(--accent); }
@@ -84,7 +82,6 @@
 </head>
 <body>
 
-<!-- Hidden SVG for Tone LUT Filter (Shadows/Highlights) -->
 <svg width="0" height="0" style="position: absolute; pointer-events: none;">
   <filter id="toneFilter">
     <feComponentTransfer>
@@ -95,7 +92,6 @@
   </filter>
 </svg>
 
-<!-- UPLOAD SCREEN -->
 <div id="uploadScreen">
   <div class="text-center mb-8">
     <h1 class="font-display text-5xl tracking-wider text-[var(--accent)]">FRAME 2.39</h1>
@@ -108,14 +104,10 @@
     <div class="font-display text-2xl tracking-wider mb-2">ВЫБРАТЬ ФОТО</div>
     <div class="text-xs text-[var(--muted)] tracking-wider">JPG, PNG, HEIC, RAW (DNG)</div>
   </div>
-  <!-- Добавлены форматы heic, heif, dng, tiff, cr2, nef, arw -->
   <input type="file" id="fileInput" accept="image/*, image/heic, image/heif, .heic, .heif, .dng, .tiff, .tif, .cr2, .nef, .arw" class="hidden">
 </div>
 
-<!-- EDITOR SCREEN -->
 <div id="editorScreen">
-  
-  <!-- Top Bar -->
   <div class="top-bar">
     <button class="btn-icon" id="backBtn">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
@@ -127,66 +119,37 @@
     <button class="btn-save" id="downloadBtn">Сохранить</button>
   </div>
 
-  <!-- Canvas Area -->
   <div class="canvas-area" id="canvasArea">
-    <!-- РАМКА КАДРИРОВАНИЯ -->
     <div id="cropFrame" class="crop-frame">
       <img id="cropImage" class="crop-image" alt="" draggable="false">
       <div id="guides" class="guides"><div class="guides-v1"></div><div class="guides-v2"></div><div class="guides-h1"></div><div class="guides-h2"></div></div>
     </div>
     
-    <!-- Floating Panels -->
     <div class="floating-panel">
-      
-      <!-- Light Panel -->
       <div id="panel-light" class="hidden">
         <div class="slider-carousel">
-          <div class="slider-card">
-            <div class="slider-header"><span class="slider-label">Света</span><span class="slider-value" id="highlightsVal">0</span></div>
-            <input type="range" class="lr-slider" id="highlightsSlider" min="-100" max="100" value="0">
-          </div>
-          <div class="slider-card">
-            <div class="slider-header"><span class="slider-label">Тени</span><span class="slider-value" id="shadowsVal">0</span></div>
-            <input type="range" class="lr-slider" id="shadowsSlider" min="-100" max="100" value="0">
-          </div>
-          <div class="slider-card">
-            <div class="slider-header"><span class="slider-label">Экспозиция</span><span class="slider-value" id="brightnessVal">100%</span></div>
-            <input type="range" class="lr-slider" id="brightnessSlider" min="50" max="150" value="100">
-          </div>
-          <div class="slider-card">
-            <div class="slider-header"><span class="slider-label">Контраст</span><span class="slider-value" id="contrastVal">100%</span></div>
-            <input type="range" class="lr-slider" id="contrastSlider" min="50" max="150" value="100">
-          </div>
+          <div class="slider-card"><div class="slider-header"><span class="slider-label">Света</span><span class="slider-value" id="highlightsVal">0</span></div><input type="range" class="lr-slider" id="highlightsSlider" min="-100" max="100" value="0"></div>
+          <div class="slider-card"><div class="slider-header"><span class="slider-label">Тени</span><span class="slider-value" id="shadowsVal">0</span></div><input type="range" class="lr-slider" id="shadowsSlider" min="-100" max="100" value="0"></div>
+          <div class="slider-card"><div class="slider-header"><span class="slider-label">Экспозиция</span><span class="slider-value" id="brightnessVal">100%</span></div><input type="range" class="lr-slider" id="brightnessSlider" min="50" max="150" value="100"></div>
+          <div class="slider-card"><div class="slider-header"><span class="slider-label">Контраст</span><span class="slider-value" id="contrastVal">100%</span></div><input type="range" class="lr-slider" id="contrastSlider" min="50" max="150" value="100"></div>
         </div>
       </div>
 
-      <!-- Color Panel -->
       <div id="panel-color" class="hidden">
         <div class="slider-carousel">
-          <div class="slider-card">
-            <div class="slider-header"><span class="slider-label">Насыщенность</span><span class="slider-value" id="saturateVal">100%</span></div>
-            <input type="range" class="lr-slider" id="saturateSlider" min="0" max="200" value="100">
-          </div>
-          <div class="slider-card">
-            <div class="slider-header"><span class="slider-label">Тепло</span><span class="slider-value" id="sepiaVal">0%</span></div>
-            <input type="range" class="lr-slider" id="sepiaSlider" min="0" max="100" value="0">
-          </div>
+          <div class="slider-card"><div class="slider-header"><span class="slider-label">Насыщенность</span><span class="slider-value" id="saturateVal">100%</span></div><input type="range" class="lr-slider" id="saturateSlider" min="0" max="200" value="100"></div>
+          <div class="slider-card"><div class="slider-header"><span class="slider-label">Тепло</span><span class="slider-value" id="sepiaVal">0%</span></div><input type="range" class="lr-slider" id="sepiaSlider" min="0" max="100" value="0"></div>
         </div>
       </div>
 
-      <!-- Crop Panel -->
       <div id="panel-crop" class="hidden">
         <div class="slider-card" style="max-width: 100%; margin: 0 auto;">
           <div class="slider-header"><span class="slider-label">Масштаб</span><span class="slider-value" id="zoomVal">100%</span></div>
           <input type="range" class="lr-slider" id="zoomSlider" min="100" max="300" value="100" step="1">
-          <div class="mt-4">
-            <div class="text-[10px] text-white/40 mb-2 tracking-widest">ФОРМАТ КАДРА</div>
-            <div class="crop-grid" id="ratioGrid"></div>
-          </div>
+          <div class="mt-4"><div class="text-[10px] text-white/40 mb-2 tracking-widest">ФОРМАТ КАДРА</div><div class="crop-grid" id="ratioGrid"></div></div>
         </div>
       </div>
 
-      <!-- Presets Panel -->
       <div id="panel-presets" class="hidden">
         <div class="slider-card" style="max-width: 100%; margin: 0 auto;">
           <div class="text-[10px] text-white/40 mb-2 tracking-widest">КИНОШНЫЕ ФИЛЬТРЫ</div>
@@ -194,48 +157,35 @@
           <button id="resetFiltersBtn" class="mt-4 w-full text-xs text-white/60 bg-white/5 py-2 rounded-md">Сбросить коррекцию</button>
         </div>
       </div>
-
     </div>
   </div>
 
-  <!-- Bottom Tab Bar -->
   <div class="bottom-bar">
-    <button class="tab-btn active" data-tab="crop">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>
-      <span>Кадр</span>
-    </button>
-    <button class="tab-btn" data-tab="light">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-      <span>Свет</span>
-    </button>
-    <button class="tab-btn" data-tab="color">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
-      <span>Цвет</span>
-    </button>
-    <button class="tab-btn" data-tab="presets">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/></svg>
-      <span>Стиль</span>
-    </button>
+    <button class="tab-btn active" data-tab="crop"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg><span>Кадр</span></button>
+    <button class="tab-btn" data-tab="light"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span>Свет</span></button>
+    <button class="tab-btn" data-tab="color"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg><span>Цвет</span></button>
+    <button class="tab-btn" data-tab="presets"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/></svg><span>Стиль</span></button>
   </div>
 </div>
 
-<!-- Toast -->
+<div id="loadingState" class="hidden fixed inset-0 flex items-center justify-center bg-black/90 z-[150]">
+  <div class="text-center">
+    <div class="w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+    <div class="text-xs text-[var(--muted)] tracking-widest">ОБРАБОТКА ФОТО...</div>
+  </div>
+</div>
+
 <div id="toast" class="toast fixed bottom-24 left-1/2 bg-black/80 border border-[var(--accent)] text-[var(--fg)] px-5 py-2.5 rounded-full text-xs shadow-2xl z-[200] pointer-events-none flex items-center gap-2">
   <span id="toastMessage"></span>
 </div>
 
 <script>
   const RATIOS = [
-    { id: '2.39:1', label: '2.39', sub: 'CINEMA', w: 2.39, h: 1 },
-    { id: '2.35:1', label: '2.35', sub: 'ANAMORPH', w: 2.35, h: 1 },
-    { id: '2.76:1', label: '2.76', sub: 'ULTRA', w: 2.76, h: 1 },
-    { id: '1.85:1', label: '1.85', sub: 'STANDARD', w: 1.85, h: 1 },
-    { id: '2:1', label: '2.00', sub: 'UNIVISIUM', w: 2, h: 1 },
-    { id: '16:9', label: '16:9', sub: 'HDTV', w: 16, h: 9 },
-    { id: '4:3', label: '4:3', sub: 'CLASSIC', w: 4, h: 3 },
-    { id: '1:1', label: '1:1', sub: 'SQUARE', w: 1, h: 1 },
+    { id: '2.39:1', label: '2.39', sub: 'CINEMA', w: 2.39, h: 1 }, { id: '2.35:1', label: '2.35', sub: 'ANAMORPH', w: 2.35, h: 1 },
+    { id: '2.76:1', label: '2.76', sub: 'ULTRA', w: 2.76, h: 1 }, { id: '1.85:1', label: '1.85', sub: 'STANDARD', w: 1.85, h: 1 },
+    { id: '2:1', label: '2.00', sub: 'UNIVISIUM', w: 2, h: 1 }, { id: '16:9', label: '16:9', sub: 'HDTV', w: 16, h: 9 },
+    { id: '4:3', label: '4:3', sub: 'CLASSIC', w: 4, h: 3 }, { id: '1:1', label: '1:1', sub: 'SQUARE', w: 1, h: 1 },
   ];
-
   const PRESETS = [
     { id: 'original', name: 'Оригинал', filter: 'brightness(100%) contrast(100%) saturate(100%) sepia(0%)' },
     { id: 'cinema', name: 'Кино', filter: 'brightness(95%) contrast(115%) saturate(120%) sepia(15%)' },
@@ -248,23 +198,21 @@
   const state = {
     fullImage: null, previewImage: null, imgWidth: 0, imgHeight: 0,
     offsetX: 0, offsetY: 0, zoom: 1, baseScale: 1,
-    ratio: RATIOS[0], fileName: '',
-    activePreset: 'original',
+    ratio: RATIOS[0], fileName: '', activePreset: 'original',
     filters: { brightness: 100, contrast: 100, saturate: 100, sepia: 0, hue: 0, shadows: 0, highlights: 0 },
     toneLUT: []
   };
 
   const $ = (id) => document.getElementById(id);
-  const cropImage = $('cropImage');
-  const cropFrame = $('cropFrame');
-  const canvasArea = $('canvasArea');
+  const cropImage = $('cropImage'), cropFrame = $('cropFrame'), canvasArea = $('canvasArea');
   
   function init() {
-    renderRatios();
-    renderPresets();
-    bindEvents();
-    updateToneLUT();
-    switchTab('crop');
+    renderRatios(); renderPresets(); bindEvents(); updateToneLUT(); switchTab('crop');
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed: ', err));
+      });
+    }
   }
 
   function renderRatios() {
@@ -280,18 +228,14 @@
         grid.querySelectorAll('button').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const r = RATIOS.find(x => x.id === btn.dataset.ratio);
-        state.ratio = r;
-        $('currentRatio').textContent = r.label + ' : 1';
-        updateFrame();
+        state.ratio = r; $('currentRatio').textContent = r.label + ' : 1'; updateFrame();
       });
     });
   }
 
   function renderPresets() {
     const grid = $('presetGrid');
-    grid.innerHTML = PRESETS.map((p, i) => `
-      <button data-preset="${p.id}" class="preset-btn ${i === 0 ? 'active' : ''}">${p.name}</button>
-    `).join('');
+    grid.innerHTML = PRESETS.map((p, i) => `<button data-preset="${p.id}" class="preset-btn ${i === 0 ? 'active' : ''}">${p.name}</button>`).join('');
     grid.querySelectorAll('button').forEach(btn => {
       btn.addEventListener('click', () => {
         grid.querySelectorAll('button').forEach(b => b.classList.remove('active'));
@@ -305,19 +249,12 @@
   }
 
   function applyFilterString(filterStr) {
-    const m = {
-      brightness: filterStr.match(/brightness\((\d+)%\)/),
-      contrast: filterStr.match(/contrast\((\d+)%\)/),
-      saturate: filterStr.match(/saturate\((\d+)%\)/),
-      sepia: filterStr.match(/sepia\((\d+)%\)/),
-      hue: filterStr.match(/hue-rotate\((\d+)deg\)/)
-    };
+    const m = { brightness: filterStr.match(/brightness\((\d+)%\)/), contrast: filterStr.match(/contrast\((\d+)%\)/), saturate: filterStr.match(/saturate\((\d+)%\)/), sepia: filterStr.match(/sepia\((\d+)%\)/), hue: filterStr.match(/hue-rotate\((\d+)deg\)/) };
     state.filters.brightness = m.brightness ? parseInt(m.brightness[1]) : 100;
     state.filters.contrast = m.contrast ? parseInt(m.contrast[1]) : 100;
     state.filters.saturate = m.saturate ? parseInt(m.saturate[1]) : 100;
     state.filters.sepia = m.sepia ? parseInt(m.sepia[1]) : 0;
     state.filters.hue = m.hue ? parseInt(m.hue[1]) : 0;
-    
     $('brightnessSlider').value = state.filters.brightness; $('brightnessVal').textContent = state.filters.brightness + '%';
     $('contrastSlider').value = state.filters.contrast; $('contrastVal').textContent = state.filters.contrast + '%';
     $('saturateSlider').value = state.filters.saturate; $('saturateVal').textContent = state.filters.saturate + '%';
@@ -326,13 +263,12 @@
   }
 
   function resetFilterSliders() {
-    state.filters.brightness = 100; state.filters.contrast = 100; state.filters.saturate = 100; state.filters.sepia = 0; state.filters.hue = 0; state.filters.shadows = 0; state.filters.highlights = 0;
-    $('brightnessSlider').value = 100; $('brightnessVal').textContent = '100%';
-    $('contrastSlider').value = 100; $('contrastVal').textContent = '100%';
-    $('saturateSlider').value = 100; $('saturateVal').textContent = '100%';
-    $('sepiaSlider').value = 0; $('sepiaVal').textContent = '0%';
-    $('shadowsSlider').value = 0; $('shadowsVal').textContent = '0';
-    $('highlightsSlider').value = 0; $('highlightsVal').textContent = '0';
+    state.filters = { brightness: 100, contrast: 100, saturate: 100, sepia: 0, hue: 0, shadows: 0, highlights: 0 };
+    ['brightness', 'contrast', 'saturate', 'sepia', 'shadows', 'highlights'].forEach(f => {
+      $(f + 'Slider').value = state.filters[f];
+      let suffix = (f === 'brightness' || f === 'contrast' || f === 'saturate' || f === 'sepia') ? '%' : '';
+      $(f + 'Val').textContent = state.filters[f] + suffix;
+    });
     updateToneLUT(); applyFilters();
   }
 
@@ -362,9 +298,7 @@
 
   function switchTab(tabName) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
-    ['light', 'color', 'crop', 'presets'].forEach(t => {
-      $('panel-' + t).classList.toggle('hidden', t !== tabName);
-    });
+    ['light', 'color', 'crop', 'presets'].forEach(t => $('panel-' + t).classList.toggle('hidden', t !== tabName));
   }
 
   function bindEvents() {
@@ -377,90 +311,46 @@
     $('backBtn').addEventListener('click', () => {
       $('editorScreen').classList.remove('active');
       $('uploadScreen').style.display = 'flex';
-      state.previewImage = null;
-      state.fullImage = null;
-      cropImage.src = '';
+      state.previewImage = null; state.fullImage = null; cropImage.src = '';
     });
 
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
-    $('zoomSlider').addEventListener('input', (e) => {
-      state.zoom = parseInt(e.target.value) / 100;
-      $('zoomVal').textContent = e.target.value + '%';
-      constrainOffset(); updateImageTransform();
-    });
-
-    // Light Sliders
+    $('zoomSlider').addEventListener('input', (e) => { state.zoom = parseInt(e.target.value) / 100; $('zoomVal').textContent = e.target.value + '%'; constrainOffset(); updateImageTransform(); });
     $('brightnessSlider').addEventListener('input', (e) => { state.filters.brightness = parseInt(e.target.value); $('brightnessVal').textContent = e.target.value + '%'; applyFilters(); clearPresets(); });
     $('contrastSlider').addEventListener('input', (e) => { state.filters.contrast = parseInt(e.target.value); $('contrastVal').textContent = e.target.value + '%'; applyFilters(); clearPresets(); });
     $('shadowsSlider').addEventListener('input', (e) => { state.filters.shadows = parseInt(e.target.value); $('shadowsVal').textContent = e.target.value; updateToneLUT(); applyFilters(); });
     $('highlightsSlider').addEventListener('input', (e) => { state.filters.highlights = parseInt(e.target.value); $('highlightsVal').textContent = e.target.value; updateToneLUT(); applyFilters(); });
-
-    // Color Sliders
     $('saturateSlider').addEventListener('input', (e) => { state.filters.saturate = parseInt(e.target.value); $('saturateVal').textContent = e.target.value + '%'; applyFilters(); clearPresets(); });
     $('sepiaSlider').addEventListener('input', (e) => { state.filters.sepia = parseInt(e.target.value); $('sepiaVal').textContent = e.target.value + '%'; applyFilters(); clearPresets(); });
 
-    $('resetFiltersBtn').addEventListener('click', () => {
-      resetFilterSliders();
-      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-      document.querySelector('[data-preset="original"]').classList.add('active');
-    });
-
+    $('resetFiltersBtn').addEventListener('click', () => { resetFilterSliders(); document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active')); document.querySelector('[data-preset="original"]').classList.add('active'); });
     $('downloadBtn').addEventListener('click', downloadImage);
 
-    // ====== ПЕРЕТАСКИВАНИЕ И ЗУМ ======
-    let isDragging = false, startX = 0, startY = 0, startOffsetX = 0, startOffsetY = 0;
-    let rafId = null;
-
+    let isDragging = false, startX = 0, startY = 0, startOffsetX = 0, startOffsetY = 0, rafId = null;
     cropFrame.addEventListener('pointerdown', (e) => {
       if (!state.previewImage) return;
       if (e.target.closest('.floating-panel')) return; 
       if (e.pointerType === 'touch' && e.isPrimary === false) return;
       isDragging = true;
-      startX = e.clientX; startY = e.clientY;
-      startOffsetX = state.offsetX; startOffsetY = state.offsetY;
+      startX = e.clientX; startY = e.clientY; startOffsetX = state.offsetX; startOffsetY = state.offsetY;
       try { cropFrame.setPointerCapture(e.pointerId); } catch(_) {}
     });
-
     cropFrame.addEventListener('pointermove', (e) => {
       if (!isDragging) return;
-      const dx = e.clientX - startX, dy = e.clientY - startY;
-      state.offsetX = startOffsetX + dx;
-      state.offsetY = startOffsetY + dy;
-      if (!rafId) {
-        rafId = requestAnimationFrame(() => {
-          constrainOffset(); updateImageTransform(); rafId = null;
-        });
-      }
+      state.offsetX = startOffsetX + (e.clientX - startX);
+      state.offsetY = startOffsetY + (e.clientY - startY);
+      if (!rafId) { rafId = requestAnimationFrame(() => { constrainOffset(); updateImageTransform(); rafId = null; }); }
     });
+    const endDrag = () => { if (isDragging) { isDragging = false; if (rafId) { cancelAnimationFrame(rafId); rafId = null; } constrainOffset(); updateImageTransform(); } };
+    cropFrame.addEventListener('pointerup', endDrag); cropFrame.addEventListener('pointercancel', endDrag); cropFrame.addEventListener('pointerleave', endDrag);
 
-    const endDrag = () => {
-      if (isDragging) {
-        isDragging = false;
-        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-        constrainOffset(); updateImageTransform();
-      }
-    };
-    cropFrame.addEventListener('pointerup', endDrag);
-    cropFrame.addEventListener('pointercancel', endDrag);
-    cropFrame.addEventListener('pointerleave', endDrag);
-
-    // Pinch Zoom
     let pinchDist = 0, pinchZoom = 1;
-    cropFrame.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 2) {
-        pinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-        pinchZoom = state.zoom;
-      }
-    }, { passive: true });
-
+    cropFrame.addEventListener('touchstart', (e) => { if (e.touches.length === 2) { pinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); pinchZoom = state.zoom; } }, { passive: true });
     cropFrame.addEventListener('touchmove', (e) => {
       if (e.touches.length === 2 && pinchDist > 0) {
         e.preventDefault();
-        const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-        let newZoom = Math.max(1, Math.min(3, pinchZoom * (dist / pinchDist)));
+        let newZoom = Math.max(1, Math.min(3, pinchZoom * (Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY) / pinchDist)));
         state.zoom = newZoom;
         const v = Math.round(newZoom * 100);
         $('zoomSlider').value = v; $('zoomVal').textContent = v + '%';
@@ -468,71 +358,39 @@
       }
     }, { passive: false });
 
-    let resizeTimer;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => { if (state.previewImage) { updateFrame(); } }, 100);
-    });
+    window.addEventListener('resize', () => { if (state.previewImage) { setTimeout(updateFrame, 100); } });
   }
 
-  function clearPresets() {
-    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-  }
+  function clearPresets() { document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active')); }
 
-  // ====== НОВАЯ ЛОГИКА ЗАГРУЗКИ (HEIC/RAW) ======
   function loadFile(file) {
-    if (!file.type.startsWith('image/') && !/\.(heic|heif|dng|cr2|nef|arw|tiff|tif)$/i.test(file.name)) {
-      return showToast('Неподдерживаемый формат');
-    }
-    
+    if (!file.type.startsWith('image/') && !/\.(heic|heif|dng|cr2|nef|arw|tiff|tif)$/i.test(file.name)) return showToast('Неподдерживаемый формат');
     $('loadingState').classList.remove('hidden');
-    state.fileName = file.name;
-    $('fileName').textContent = file.name;
-
+    state.fileName = file.name; $('fileName').textContent = file.name;
     const name = file.name.toLowerCase();
     const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || name.endsWith('.heic') || name.endsWith('.heif');
     const isRawDng = name.endsWith('.dng') || name.endsWith('.tiff') || name.endsWith('.tif');
 
     if (isHeic && typeof heic2any !== 'undefined') {
-      // Конвертация HEIC
-      fetch(URL.createObjectURL(file))
-        .then(res => res.blob())
-        .then(blob => heic2any({ blob, toType: 'image/jpeg', quality: 0.92 }))
-        .then(jpegBlob => {
-          if (Array.isArray(jpegBlob)) jpegBlob = jpegBlob[0];
-          const reader = new FileReader();
-          reader.onload = (e) => processImage(e.target.result);
-          reader.readAsDataURL(jpegBlob);
-        })
-        .catch(() => {
-          $('loadingState').classList.add('hidden');
-          showToast('Ошибка конвертации HEIC');
-        });
+      heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 })
+        .then(jpegBlob => { if (Array.isArray(jpegBlob)) jpegBlob = jpegBlob[0]; const reader = new FileReader(); reader.onload = (e) => processImage(e.target.result); reader.readAsDataURL(jpegBlob); })
+        .catch(() => { $('loadingState').classList.add('hidden'); showToast('Ошибка конвертации HEIC'); });
     } else if (isRawDng && typeof UTIF !== 'undefined') {
-      // Конвертация DNG/TIFF
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const buffer = e.target.result;
-          const ifds = UTIF.decode(buffer);
-          UTIF.decodeImage(buffer, ifds[0]);
-          const rgba = UTIF.toRGBA8(ifds[0]);
+          const buffer = e.target.result, ifds = UTIF.decode(buffer);
+          UTIF.decodeImage(buffer, ifds[0]); const rgba = UTIF.toRGBA8(ifds[0]);
           const canvas = document.createElement('canvas');
-          canvas.width = ifds[0].width;
-          canvas.height = ifds[0].height;
-          const ctx = canvas.getContext('2d');
-          const imgData = ctx.createImageData(canvas.width, canvas.height);
+          canvas.width = ifds[0].width; canvas.height = ifds[0].height;
+          const ctx = canvas.getContext('2d'), imgData = ctx.createImageData(canvas.width, canvas.height);
           for (let i = 0; i < rgba.length; i++) imgData.data[i] = rgba[i];
           ctx.putImageData(imgData, 0, 0);
-          processImage(canvas.toDataURL('image/jpeg', 0.92));
-        } catch (err) {
-          $('loadingState').classList.add('hidden');
-          showToast('Ошибка чтения RAW/DNG');
-        }
+          processImage(canvas.toDataURL('image/jpeg', 0.9));
+        } catch (err) { $('loadingState').classList.add('hidden'); showToast('Ошибка чтения RAW/DNG'); }
       };
       reader.readAsArrayBuffer(file);
     } else {
-      // Обычные JPG/PNG
       const reader = new FileReader();
       reader.onload = (e) => processImage(e.target.result);
       reader.readAsDataURL(file);
@@ -551,10 +409,7 @@
         tempCanvas.width = prevW; tempCanvas.height = prevH;
         tempCanvas.getContext('2d').drawImage(img, 0, 0, prevW, prevH);
         state.previewImage = new Image();
-        state.previewImage.onload = () => {
-          state.imgWidth = prevW; state.imgHeight = prevH;
-          setupPreviewImage(tempCanvas.toDataURL('image/jpeg', 0.9));
-        };
+        state.previewImage.onload = () => { state.imgWidth = prevW; state.imgHeight = prevH; setupPreviewImage(tempCanvas.toDataURL('image/jpeg', 0.9)); };
         state.previewImage.src = tempCanvas.toDataURL('image/jpeg', 0.9);
       } else {
         state.previewImage = img;
@@ -562,10 +417,7 @@
         setupPreviewImage(dataUrl);
       }
     };
-    img.onerror = () => {
-      $('loadingState').classList.add('hidden');
-      showToast('Не удалось загрузить. Формат не поддерживается.');
-    };
+    img.onerror = () => { $('loadingState').classList.add('hidden'); showToast('Не удалось загрузить. Формат не поддерживается.'); };
     img.src = dataUrl;
   }
 
@@ -573,50 +425,29 @@
     cropImage.src = src;
     $('uploadScreen').style.display = 'none';
     $('editorScreen').classList.add('active');
-    updateFrame();
-    applyFilters();
-    $('loadingState').classList.add('hidden');
+    setTimeout(() => { updateFrame(); applyFilters(); $('loadingState').classList.add('hidden'); }, 50);
   }
 
   function updateFrame() {
     const r = state.ratio.w / state.ratio.h;
-    const screenW = canvasArea.clientWidth;
-    const screenH = canvasArea.clientHeight;
-    
+    const screenW = canvasArea.clientWidth, screenH = canvasArea.clientHeight;
     let frameW, frameH;
     const padding = 20;
     if (screenW / screenH > r) {
-      frameH = screenH - padding * 2;
-      frameW = frameH * r;
-      if (frameW > screenW - padding * 2) {
-        frameW = screenW - padding * 2;
-        frameH = frameW / r;
-      }
+      frameH = screenH - padding * 2; frameW = frameH * r;
+      if (frameW > screenW - padding * 2) { frameW = screenW - padding * 2; frameH = frameW / r; }
     } else {
-      frameW = screenW - padding * 2;
-      frameH = frameW / r;
-      if (frameH > screenH - padding * 2) {
-        frameH = screenH - padding * 2;
-        frameW = frameH * r;
-      }
+      frameW = screenW - padding * 2; frameH = frameW / r;
+      if (frameH > screenH - padding * 2) { frameH = screenH - padding * 2; frameW = frameH * r; }
     }
-
-    cropFrame.style.width = frameW + 'px';
-    cropFrame.style.height = frameH + 'px';
-
-    if (state.previewImage) {
-      requestAnimationFrame(() => {
-        fitImage();
-        updateImageTransform();
-      });
-    }
+    cropFrame.style.width = frameW + 'px'; cropFrame.style.height = frameH + 'px';
+    if (state.previewImage) { requestAnimationFrame(() => { fitImage(); updateImageTransform(); }); }
   }
 
   function fitImage() {
     if (!state.previewImage) return;
     const frameW = cropFrame.clientWidth, frameH = cropFrame.clientHeight;
     if (frameW === 0 || frameH === 0) return requestAnimationFrame(fitImage);
-    
     state.baseScale = Math.max(frameW / state.imgWidth, frameH / state.imgHeight);
     state.zoom = 1;
     state.offsetX = (frameW - state.imgWidth * state.baseScale) / 2;
@@ -641,51 +472,32 @@
 
   function downloadImage() {
     if (!state.fullImage) return;
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    const frameW = cropFrame.clientWidth;
-    const frameH = cropFrame.clientHeight;
-    
+    const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
+    const frameW = cropFrame.clientWidth, frameH = cropFrame.clientHeight;
     const exportScale = state.fullImage.naturalWidth / state.imgWidth;
-    
-    let outW = Math.round(frameW * exportScale);
-    let outH = Math.round(frameH * exportScale);
-
+    let outW = Math.round(frameW * exportScale), outH = Math.round(frameH * exportScale);
     canvas.width = outW; canvas.height = outH;
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, outW, outH);
 
     const f = state.filters;
     ctx.filter = `brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) sepia(${f.sepia}%) hue-rotate(${f.hue}deg)`;
-
-    const imgOutX = state.offsetX * exportScale;
-    const imgOutY = state.offsetY * exportScale;
-    const imgOutW = state.fullImage.naturalWidth; 
-    const imgOutH = state.fullImage.naturalHeight;
-
+    const imgOutX = state.offsetX * exportScale, imgOutY = state.offsetY * exportScale;
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(state.fullImage, imgOutX, imgOutY, imgOutW, imgOutH);
+    ctx.drawImage(state.fullImage, imgOutX, imgOutY, state.fullImage.naturalWidth, state.fullImage.naturalHeight);
     ctx.filter = 'none';
 
     if (state.toneLUT.length === 256) {
-      const imgData = ctx.getImageData(0, 0, outW, outH);
-      const d = imgData.data;
-      for (let i = 0; i < d.length; i += 4) {
-        d[i] = state.toneLUT[d[i]];
-        d[i+1] = state.toneLUT[d[i+1]];
-        d[i+2] = state.toneLUT[d[i+2]];
-      }
+      const imgData = ctx.getImageData(0, 0, outW, outH), d = imgData.data;
+      for (let i = 0; i < d.length; i += 4) { d[i] = state.toneLUT[d[i]]; d[i+1] = state.toneLUT[d[i+1]]; d[i+2] = state.toneLUT[d[i+2]]; }
       ctx.putImageData(imgData, 0, 0);
     }
 
     canvas.toBlob((blob) => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `cinematic_${state.ratio.id.replace(':', 'x')}_${Date.now()}.png`;
+      a.href = url; a.download = `cinematic_${state.ratio.id.replace(':', 'x')}_${Date.now()}.png`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      showToast('Сохранено: ' + outW + '×' + outH);
+      URL.revokeObjectURL(url); showToast('Сохранено: ' + outW + '×' + outH);
     }, 'image/png');
   }
 
