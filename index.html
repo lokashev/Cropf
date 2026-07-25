@@ -41,10 +41,7 @@
   .btn-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
   .btn-save { background: var(--accent); color: #000; font-weight: 700; padding: 8px 20px; border-radius: 20px; font-size: 14px; }
 
-  /* ИСПРАВЛЕНО: Серо-чёрный фон, чтобы черная рамка фото выделялась */
-  .canvas-area { flex: 1; position: relative; overflow: hidden; background: #121212; display: flex; align-items: center; justify-content: center; padding-top: calc(60px + env(safe-area-inset-top)); padding-bottom: calc(260px + env(safe-area-inset-bottom)); }
-  
-  /* ИСПРАВЛЕНО: Добавлена рамка и свечение, чтобы было видно границы */
+  .canvas-area { flex: 1; position: relative; overflow: hidden; background: #121212; display: flex; align-items: center; justify-content: center; padding-top: calc(80px + env(safe-area-inset-top)); padding-bottom: calc(280px + env(safe-area-inset-bottom)); }
   .crop-frame { position: relative; overflow: hidden; background: #000; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 0 0 9999px rgba(0,0,0,0.6); touch-action: none; }
   .crop-image { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform, filter; user-select: none; -webkit-user-drag: none; pointer-events: none; max-width: none; }
 
@@ -54,7 +51,6 @@
   .guides-v1 { top: 0; bottom: 0; left: 33.333%; width: 1px; } .guides-v2 { top: 0; bottom: 0; left: 66.666%; width: 1px; }
   .guides-h1 { left: 0; right: 0; top: 33.333%; height: 1px; } .guides-h2 { left: 0; right: 0; top: 66.666%; height: 1px; }
 
-  /* ИСПРАВЛЕНО: Панель опущена ниже (90px вместо 80px) */
   .floating-panel { position: absolute; bottom: calc(90px + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 40; padding: 0 12px; }
   .slider-carousel { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 8px 4px 12px; }
   .slider-carousel::-webkit-scrollbar { display: none; }
@@ -117,8 +113,12 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
     </button>
     <div class="text-center">
-      <div class="text-xs text-white/50 font-mono" id="fileName">image.jpg</div>
-      <div class="text-[10px] text-[var(--accent)] font-mono" id="currentRatio">2.39 : 1</div>
+      <div class="text-xs text-white/50 font-mono truncate max-w-[150px]" id="fileName">image.jpg</div>
+      <div class="text-[10px] font-mono flex items-center justify-center gap-1.5">
+        <span id="currentRatio" class="text-[var(--accent)]">2.39 : 1</span>
+        <span class="text-white/20">/</span>
+        <span id="outputRes" class="text-white/40">— × —</span>
+      </div>
     </div>
     <button class="btn-save" id="downloadBtn">Сохранить</button>
   </div>
@@ -471,23 +471,57 @@
     cropImage.src = src;
     $('uploadScreen').style.display = 'none';
     $('editorScreen').classList.add('active');
-    setTimeout(() => { updateFrame(); applyFilters(); $('loadingState').classList.add('hidden'); }, 50);
+    setTimeout(() => { updateFrame(); applyFilters(); updateOutputRes(); $('loadingState').classList.add('hidden'); }, 50);
   }
 
   function updateFrame() {
     const r = state.ratio.w / state.ratio.h;
-    const screenW = canvasArea.clientWidth, screenH = canvasArea.clientHeight;
+    // ИСПРАВЛЕНО: Берём реальные отступы CSS, чтобы фото никогда не вылезало за экран
+    const cs = getComputedStyle(canvasArea);
+    const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+    const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+    
+    const availW = Math.max(0, canvasArea.clientWidth - padX);
+    const availH = Math.max(0, canvasArea.clientHeight - padY);
+    
     let frameW, frameH;
-    const padding = 20;
-    if (screenW / screenH > r) {
-      frameH = screenH - padding * 2; frameW = frameH * r;
-      if (frameW > screenW - padding * 2) { frameW = screenW - padding * 2; frameH = frameW / r; }
+    if (availW / availH > r) {
+      frameH = availH;
+      frameW = frameH * r;
     } else {
-      frameW = screenW - padding * 2; frameH = frameW / r;
-      if (frameH > screenH - padding * 2) { frameH = screenH - padding * 2; frameW = frameH * r; }
+      frameW = availW;
+      frameH = frameW / r;
     }
-    cropFrame.style.width = frameW + 'px'; cropFrame.style.height = frameH + 'px';
-    if (state.previewImage) { requestAnimationFrame(() => { fitImage(); updateImageTransform(); }); }
+
+    cropFrame.style.width = frameW + 'px'; 
+    cropFrame.style.height = frameH + 'px';
+
+    if (state.previewImage) { 
+      requestAnimationFrame(() => { 
+        fitImage(); 
+        updateImageTransform(); 
+        updateOutputRes();
+      }); 
+    }
+  }
+
+  // ИСПРАВЛЕНО: Функция показа финального разрешения фото
+  function updateOutputRes() {
+    if (!state.fullImage || !state.previewImage) return;
+    const frameW = cropFrame.clientWidth;
+    const frameH = cropFrame.clientHeight;
+    
+    const exportScale = state.fullImage.naturalWidth / state.imgWidth;
+    let outW = Math.round(frameW * exportScale);
+    let outH = Math.round(frameH * exportScale);
+    
+    if (outW > state.fullImage.naturalWidth) {
+      const k = state.fullImage.naturalWidth / outW;
+      outW = state.fullImage.naturalWidth;
+      outH = Math.round(outH * k);
+    }
+    
+    $('outputRes').textContent = `${outW}×${outH}`;
   }
 
   function fitImage() {
