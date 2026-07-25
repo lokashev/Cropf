@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<!-- Мета-теги для PWA -->
 <meta name="theme-color" content="#050505">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -38,11 +37,13 @@
   #editorScreen { position: fixed; inset: 0; display: none; flex-direction: column; background: #000; z-index: 20; }
   #editorScreen.active { display: flex; }
   
-  .top-bar { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); position: absolute; top: 0; left: 0; right: 0; z-index: 30; }
+  /* ИСПРАВЛЕНО: Добавлен отступ сверху для статус-бара айфона */
+  .top-bar { padding: 12px 16px; padding-top: calc(12px + env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); position: absolute; top: 0; left: 0; right: 0; z-index: 30; }
   .btn-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
   .btn-save { background: var(--accent); color: #000; font-weight: 700; padding: 8px 20px; border-radius: 20px; font-size: 14px; }
 
-  .canvas-area { flex: 1; position: relative; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; padding-top: 60px; padding-bottom: 180px; }
+  /* ИСПРАВЛЕНО: Увеличены отступы с учетом безопасных зон */
+  .canvas-area { flex: 1; position: relative; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; padding-top: calc(60px + env(safe-area-inset-top)); padding-bottom: calc(180px + env(safe-area-inset-bottom)); }
   .crop-frame { position: relative; overflow: hidden; background: #000; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); touch-action: none; }
   .crop-image { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform, filter; user-select: none; -webkit-user-drag: none; pointer-events: none; max-width: none; }
 
@@ -52,7 +53,7 @@
   .guides-v1 { top: 0; bottom: 0; left: 33.333%; width: 1px; } .guides-v2 { top: 0; bottom: 0; left: 66.666%; width: 1px; }
   .guides-h1 { left: 0; right: 0; top: 33.333%; height: 1px; } .guides-h2 { left: 0; right: 0; top: 66.666%; height: 1px; }
 
-  .floating-panel { position: absolute; bottom: 80px; left: 0; right: 0; z-index: 40; padding: 0 12px; }
+  .floating-panel { position: absolute; bottom: calc(80px + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 40; padding: 0 12px; }
   .slider-carousel { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 8px 4px 12px; }
   .slider-carousel::-webkit-scrollbar { display: none; }
   .slider-card { min-width: 75vw; max-width: 85vw; scroll-snap-align: center; background: var(--lr-panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -65,7 +66,8 @@
   input[type="range"].lr-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; cursor: pointer; box-shadow: 0 0 0 4px rgba(232, 168, 56, 0.2); }
   input[type="range"].lr-slider::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #fff; cursor: pointer; border: none; }
 
-  .bottom-bar { height: 70px; background: #0a0a0a; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 50; position: relative; }
+  /* ИСПРАВЛЕНО: Высота панели и отступ для индикатора Home */
+  .bottom-bar { height: calc(70px + env(safe-area-inset-bottom)); background: #0a0a0a; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-around; align-items: flex-start; padding-top: 10px; padding-bottom: env(safe-area-inset-bottom); z-index: 50; position: relative; }
   .tab-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #666; background: none; border: none; padding: 8px 16px; transition: color 0.2s; }
   .tab-btn.active { color: var(--accent); }
   .tab-btn span { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -77,7 +79,8 @@
   .preset-btn { background: rgba(255,255,255,0.05); border: 1px solid transparent; border-radius: 8px; padding: 10px 4px; text-align: center; transition: all 0.2s; font-size: 12px; color: #fff; }
   .preset-btn.active { background: rgba(232, 168, 56, 0.15); border-color: var(--accent); color: var(--accent); }
 
-  .toast { transform: translate(-50%, 100px); transition: transform 0.4s cubic-bezier(.4,0,.2,1); } .toast.show { transform: translate(-50%, 0); }
+  .toast { transform: translate(-50%, 100px); transition: transform 0.4s cubic-bezier(.4,0,.2,1); bottom: calc(24px + env(safe-area-inset-bottom) + 70px); } 
+  .toast.show { transform: translate(-50%, 0); }
 </style>
 </head>
 <body>
@@ -175,7 +178,7 @@
   </div>
 </div>
 
-<div id="toast" class="toast fixed bottom-24 left-1/2 bg-black/80 border border-[var(--accent)] text-[var(--fg)] px-5 py-2.5 rounded-full text-xs shadow-2xl z-[200] pointer-events-none flex items-center gap-2">
+<div id="toast" class="toast fixed left-1/2 bg-black/80 border border-[var(--accent)] text-[var(--fg)] px-5 py-2.5 rounded-full text-xs shadow-2xl z-[200] pointer-events-none flex items-center gap-2">
   <span id="toastMessage"></span>
 </div>
 
@@ -379,15 +382,41 @@
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const buffer = e.target.result, ifds = UTIF.decode(buffer);
-          UTIF.decodeImage(buffer, ifds[0]); const rgba = UTIF.toRGBA8(ifds[0]);
-          const canvas = document.createElement('canvas');
-          canvas.width = ifds[0].width; canvas.height = ifds[0].height;
-          const ctx = canvas.getContext('2d'), imgData = ctx.createImageData(canvas.width, canvas.height);
+          const buffer = e.target.result;
+          const ifds = UTIF.decode(buffer);
+          UTIF.decodeImage(buffer, ifds[0]);
+          const rgba = UTIF.toRGBA8(ifds[0]);
+          
+          // ИСПРАВЛЕНО: Чтение ориентации EXIF (тег 274)
+          const w = ifds[0].width, h = ifds[0].height;
+          const orientation = ifds[0].t274 ? ifds[0].t274[0] : 1; 
+          
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = w; tempCanvas.height = h;
+          const tempCtx = tempCanvas.getContext('2d');
+          const imgData = tempCtx.createImageData(w, h);
           for (let i = 0; i < rgba.length; i++) imgData.data[i] = rgba[i];
-          ctx.putImageData(imgData, 0, 0);
+          tempCtx.putImageData(imgData, 0, 0);
+          
+          // Поворот canvas в зависимости от ориентации
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (orientation === 6 || orientation === 8) {
+            canvas.width = h; canvas.height = w;
+          } else {
+            canvas.width = w; canvas.height = h;
+          }
+          
+          if (orientation === 3) { ctx.translate(w, h); ctx.rotate(Math.PI); }
+          else if (orientation === 6) { ctx.translate(h, 0); ctx.rotate(Math.PI / 2); }
+          else if (orientation === 8) { ctx.translate(0, w); ctx.rotate(-Math.PI / 2); }
+          
+          ctx.drawImage(tempCanvas, 0, 0);
           processImage(canvas.toDataURL('image/jpeg', 0.9));
-        } catch (err) { $('loadingState').classList.add('hidden'); showToast('Ошибка чтения RAW/DNG'); }
+        } catch (err) { 
+          $('loadingState').classList.add('hidden'); 
+          showToast('Ошибка чтения RAW/DNG'); 
+        }
       };
       reader.readAsArrayBuffer(file);
     } else {
