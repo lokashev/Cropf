@@ -97,7 +97,6 @@
     border: none;
   }
 
-  /* ИСПРАВЛЕНО: Увеличен отступ снизу до 340px, чтобы поднять рамку фото */
   .canvas-area { flex: 1; position: relative; overflow: hidden; background: var(--lr-canvas); display: flex; align-items: center; justify-content: center; padding-top: calc(80px + env(safe-area-inset-top)); padding-bottom: calc(340px + env(safe-area-inset-bottom)); }
   .crop-frame { position: relative; overflow: hidden; background: #000; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 0 0 9999px var(--lr-shadow), 0 0 40px rgba(10, 132, 255, 0.1); touch-action: none; border-radius: 4px; }
   .crop-image { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform, filter; user-select: none; -webkit-user-drag: none; pointer-events: none; max-width: none; }
@@ -108,7 +107,6 @@
   .guides-v1 { top: 0; bottom: 0; left: 33.333%; width: 1px; } .guides-v2 { top: 0; bottom: 0; left: 66.666%; width: 1px; }
   .guides-h1 { left: 0; right: 0; top: 33.333%; height: 1px; } .guides-h2 { left: 0; right: 0; top: 66.666%; height: 1px; }
 
-  /* ИСПРАВЛЕНО: Панель опущена к самому низу (90px), прямо над навбаром */
   .floating-panel { position: absolute; bottom: calc(90px + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 40; padding: 0 12px; }
   .slider-carousel { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 8px 4px 12px; }
   .slider-carousel::-webkit-scrollbar { display: none; }
@@ -129,20 +127,20 @@
   input[type="range"].lr-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.05); border: none; }
   input[type="range"].lr-slider::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; background: #fff; cursor: pointer; border: none; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
 
-  /* НОВЫЙ ДИЗАЙН: Плавающая навигация (Пилюля) */
+  /* ИСПРАВЛЕНО: Навбар опущен к самому низу (5px) и сделан более вытянутым (60px высота) */
   .bottom-bar { 
     position: absolute;
-    bottom: calc(15px + env(safe-area-inset-bottom));
+    bottom: calc(5px + env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%);
-    width: calc(100% - 30px);
+    width: calc(100% - 20px);
     max-width: 420px;
-    height: 64px;
+    height: 60px;
     background: var(--lr-bar);
     backdrop-filter: blur(30px) saturate(180%);
     -webkit-backdrop-filter: blur(30px) saturate(180%);
     border: 1px solid var(--lr-border);
-    border-radius: 32px; /* Овальная форма */
+    border-radius: 30px; 
     box-shadow: var(--glass-shadow), var(--glass-highlight);
     display: flex;
     justify-content: space-around;
@@ -759,7 +757,7 @@
     ctx.drawImage(state.fullImage, sx, sy, sw, sh, 0, 0, sw, sh);
     ctx.filter = 'none';
     if (state.toneLUT.length === 256) {
-      const imgData = ctx.getImageData(0, 0, sw, sh), d = imgData.data;
+      const imgData = ctx.getImageData(0,0, sw, sh), d = imgData.data;
       for (let i = 0; i < d.length; i += 4) { d[i] = state.toneLUT[d[i]]; d[i+1] = state.toneLUT[d[i+1]]; d[i+2] = state.toneLUT[d[i+2]]; }
       ctx.putImageData(imgData, 0, 0);
     }
