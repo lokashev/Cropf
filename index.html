@@ -60,7 +60,6 @@
   .text-muted { color: var(--muted); }
   .text-accent { color: var(--accent); }
 
-  /* SPLASH SCREEN */
   #splashScreen { position: fixed; inset: 0; background: #000000; z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
   #splashScreen.fade-out { opacity: 0; pointer-events: none; }
 
@@ -105,8 +104,12 @@
   .crop-frame { position: relative; overflow: hidden; background: #000; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 0 0 9999px var(--lr-shadow), 0 0 40px rgba(10, 132, 255, 0.1); touch-action: none; border-radius: 4px; }
   .crop-image { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform, filter; user-select: none; -webkit-user-drag: none; pointer-events: none; max-width: none; }
 
-  /* ВИНЬЕТКА */
-  #vignetteOverlay { position: absolute; inset: 0; pointer-events: none; z-index: 5; transition: box-shadow 0.1s linear; box-shadow: inset 0 0 0px rgba(0,0,0,0); }
+  #vignetteOverlay { position: absolute; inset: 0; pointer-events: none; z-index: 5; background: transparent; }
+  #grainOverlay { 
+    position: absolute; inset: 0; pointer-events: none; z-index: 6; opacity: 0; transition: opacity 0.2s; 
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+  }
 
   .guides { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 10; }
   .guides.active { opacity: 1; }
@@ -210,11 +213,21 @@
 
   .settings-section { border-top: 1px solid var(--lr-border); padding-top: 16px; margin-top: 16px; }
   .settings-label { font-size: 13px; color: var(--lr-text-muted); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px; font-weight: 600; }
+
+  /* EXPORT MODAL */
+  #exportModal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 300; display: none; align-items: flex-end; justify-content: center; padding: 20px; padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
+  #exportModal.active { display: flex; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .export-card { width: 100%; max-width: 360px; background: var(--lr-panel); backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%); border-radius: 24px; border: 1px solid var(--lr-border); padding: 24px; box-shadow: var(--glass-shadow), var(--glass-highlight); animation: slideUp 0.3s cubic-bezier(.4,0,.2,1); }
+  @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  
+  .segmented { display: flex; background: var(--border-2); border-radius: 10px; padding: 2px; gap: 2px; }
+  .seg-btn { flex: 1; padding: 8px; text-align: center; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--muted); border: none; background: transparent; transition: all 0.2s; }
+  .seg-btn.active { background: var(--accent); color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
 </style>
 </head>
 <body>
 
-<!-- SPLASH SCREEN -->
 <div id="splashScreen">
   <h1 class="font-display text-5xl tracking-wider text-accent" style="text-shadow: 0 4px 20px rgba(10, 132, 255, 0.4);">FRAME 2.39</h1>
   <div class="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mt-6"></div>
@@ -242,7 +255,7 @@
     <div class="font-display text-2xl tracking-wider mb-2" style="color: var(--fg);">ВЫБРАТЬ ФОТО</div>
     <div class="text-xs text-muted tracking-wider">JPG, PNG, HEIC, RAW (DNG)</div>
   </div>
-  <div class="absolute bottom-6 text-xs text-muted font-mono">v<span id="uploadVersion">1.1.0</span></div>
+  <div class="absolute bottom-6 text-xs text-muted font-mono">v<span id="uploadVersion">1.3.1</span></div>
   <input type="file" id="fileInput" accept="image/*, image/heic, image/heif, .heic, .heif, .dng, .tiff, .tif, .cr2, .nef, .arw" class="hidden">
 </div>
 
@@ -259,22 +272,35 @@
         <span id="outputRes" class="text-muted">— × —</span>
       </div>
     </div>
-    <button class="btn-save" id="downloadBtn">Сохранить</button>
+    <button class="btn-save" id="openExportBtn">Сохранить</button>
+    <button class="btn-save" id="developBtn" style="display: none;">Проявить</button>
   </div>
 
   <div class="canvas-area" id="canvasArea">
     <div id="cropFrame" class="crop-frame">
       <img id="cropImage" class="crop-image" alt="" draggable="false">
       <div id="vignetteOverlay"></div>
+      <div id="grainOverlay"></div>
       <div id="guides" class="guides"><div class="guides-v1"></div><div class="guides-v2"></div><div class="guides-h1"></div><div class="guides-h2"></div></div>
     </div>
     
     <div class="floating-panel">
+      <div id="panel-raw" class="hidden">
+        <div class="slider-carousel">
+          <div class="slider-card"><div class="slider-header"><span class="slider-label">Экспозиция</span><span class="slider-value" id="rawBrightnessVal">100%</span></div><input type="range" class="lr-slider" id="rawBrightnessSlider" min="50" max="150" value="100"></div>
+          <div class="slider-card"><div class="slider-header"><span class="slider-label">Контраст</span><span class="slider-value" id="rawContrastVal">100%</span></div><input type="range" class="lr-slider" id="rawContrastSlider" min="50" max="150" value="100"></div>
+          <div class="slider-card"><div class="slider-header"><span class="slider-label">Света</span><span class="slider-value" id="rawHighlightsVal">0</span></div><input type="range" class="lr-slider" id="rawHighlightsSlider" min="-100" max="100" value="0"></div>
+          <div class="slider-card"><div class="slider-header"><span class="slider-label">Тени</span><span class="slider-value" id="rawShadowsVal">0</span></div><input type="range" class="lr-slider" id="rawShadowsSlider" min="-100" max="100" value="0"></div>
+          <div class="slider-card"><div class="slider-header"><span class="slider-label">Температура</span><span class="slider-value" id="rawTempVal">0</span></div><input type="range" class="lr-slider" id="rawTempSlider" min="-100" max="100" value="0"></div>
+        </div>
+      </div>
+
       <div id="panel-light" class="hidden">
         <div class="slider-carousel">
           <div class="slider-card"><div class="slider-header"><span class="slider-label">Света</span><span class="slider-value" id="highlightsVal">0</span></div><input type="range" class="lr-slider" id="highlightsSlider" min="-100" max="100" value="0"></div>
           <div class="slider-card"><div class="slider-header"><span class="slider-label">Тени</span><span class="slider-value" id="shadowsVal">0</span></div><input type="range" class="lr-slider" id="shadowsSlider" min="-100" max="100" value="0"></div>
           <div class="slider-card"><div class="slider-header"><span class="slider-label">Фад</span><span class="slider-value" id="fadeVal">0</span></div><input type="range" class="lr-slider" id="fadeSlider" min="0" max="100" value="0"></div>
+          <div class="slider-card"><div class="slider-header"><span class="slider-label">Зерно</span><span class="slider-value" id="grainVal">0</span></div><input type="range" class="lr-slider" id="grainSlider" min="0" max="100" value="0"></div>
           <div class="slider-card"><div class="slider-header"><span class="slider-label">Экспозиция</span><span class="slider-value" id="brightnessVal">100%</span></div><input type="range" class="lr-slider" id="brightnessSlider" min="50" max="150" value="100"></div>
           <div class="slider-card"><div class="slider-header"><span class="slider-label">Контраст</span><span class="slider-value" id="contrastVal">100%</span></div><input type="range" class="lr-slider" id="contrastSlider" min="50" max="150" value="100"></div>
         </div>
@@ -332,7 +358,7 @@
             <div class="settings-label">О ПРИЛОЖЕНИИ</div>
             <div class="flex justify-between items-center mb-2">
               <span class="text-sm" style="color: var(--fg); font-weight: 500;">Версия</span>
-              <span class="font-mono text-sm text-accent" id="settingsVersion">1.1.0</span>
+              <span class="font-mono text-sm text-accent" id="settingsVersion">1.3.1</span>
             </div>
             <div class="text-xs text-muted mt-2 leading-relaxed">
               FRAME 2.39 — это инструмент для придания фотографиям кинематографического вида. Работает локально в вашем браузере. Фотографии никуда не загружаются.
@@ -350,12 +376,47 @@
     </div>
   </div>
 
-  <div class="bottom-bar">
+  <div class="bottom-bar" id="bottomBar">
     <button class="tab-btn active" data-tab="crop"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg><span>Кадр</span></button>
     <button class="tab-btn" data-tab="light"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span>Свет</span></button>
     <button class="tab-btn" data-tab="color"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg><span>Цвет</span></button>
     <button class="tab-btn" data-tab="presets"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/></svg><span>Стиль</span></button>
     <button class="tab-btn" data-tab="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><span>Настр.</span></button>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div id="exportModal">
+  <div class="export-card">
+    <h3 class="settings-label" style="margin-bottom: 16px;">ФОРМАТ ФАЙЛА</h3>
+    <div class="segmented mb-4">
+      <button class="seg-btn active" data-format="png">PNG</button>
+      <button class="seg-btn" data-format="jpg">JPG</button>
+    </div>
+    <div id="qualityWrapper" class="hidden mb-4">
+      <div class="slider-header"><span class="slider-label">Качество JPG</span><span class="slider-value" id="exportQualityVal">95%</span></div>
+      <input type="range" class="lr-slider" id="exportQualitySlider" min="10" max="100" value="95">
+    </div>
+    
+    <h3 class="settings-label" style="margin-top: 24px; margin-bottom: 16px;">РАМКА ДЛЯ INSTAGRAM</h3>
+    <div class="flex items-center justify-between mb-4">
+      <span class="text-sm" style="color: var(--fg); font-weight: 500;">Добавить полосы (Letterbox)</span>
+      <button id="letterboxToggle" class="toggle-btn"><span class="dot"></span></button>
+    </div>
+    <div id="letterboxOptions" class="hidden">
+      <div class="segmented mb-2">
+        <button class="seg-btn active" data-lbratio="1:1">1:1</button>
+        <button class="seg-btn" data-lbratio="4:5">4:5</button>
+        <button class="seg-btn" data-lbratio="16:9">16:9</button>
+      </div>
+      <div class="segmented">
+        <button class="seg-btn active" data-lbcolor="#000000">Черный</button>
+        <button class="seg-btn" data-lbcolor="#FFFFFF">Белый</button>
+      </div>
+    </div>
+    
+    <button id="doExportBtn" class="btn-save w-full mt-6" style="padding: 12px; border-radius: 12px; display: flex; justify-content: center;">Экспортировать</button>
+    <button id="cancelExportBtn" class="w-full mt-2 text-sm text-muted" style="padding: 8px; background: transparent; border: none;">Отмена</button>
   </div>
 </div>
 
@@ -371,7 +432,7 @@
 </div>
 
 <script>
-  const APP_VERSION = "1.1.0";
+  const APP_VERSION = "1.3.1";
   
   const RATIOS = [
     { id: '2.39:1', label: '2.39', sub: 'CINEMA', w: 2.39, h: 1 }, { id: '2.35:1', label: '2.35', sub: 'ANAMORPH', w: 2.35, h: 1 },
@@ -389,12 +450,15 @@
   ];
 
   const state = {
+    isRaw: false,
     fullImage: null, previewImage: null, imgWidth: 0, imgHeight: 0,
     offsetX: 0, offsetY: 0, zoom: 1, baseScale: 1,
     flipH: 1, flipV: 1,
     ratio: RATIOS[0], fileName: '', activePreset: 'original',
-    filters: { brightness: 100, contrast: 100, saturate: 100, sepia: 0, hue: 0, shadows: 0, highlights: 0, fade: 0, vignette: 0 },
-    toneLUT: []
+    filters: { brightness: 100, contrast: 100, saturate: 100, sepia: 0, hue: 0, shadows: 0, highlights: 0, fade: 0, vignette: 0, grain: 0 },
+    rawFilters: { brightness: 100, contrast: 100, saturate: 100, sepia: 0, hue: 0, shadows: 0, highlights: 0, fade: 0, temp: 0 },
+    toneLUT: [],
+    exportSettings: { format: 'png', quality: 95, useLetterbox: false, lbRatio: '1:1', lbColor: '#000000' }
   };
 
   const $ = (id) => document.getElementById(id);
@@ -409,9 +473,8 @@
       $('themeToggle').classList.add('active');
     }
 
-    renderRatios(); renderPresets(); bindEvents(); updateToneLUT(); switchTab('crop');
+    renderRatios(); renderPresets(); bindEvents(); updateToneLUT(state.filters); switchTab('crop');
     
-    // Скрываем Splash Screen через 1 секунду
     setTimeout(() => {
       $('splashScreen').classList.add('fade-out');
       setTimeout(() => $('splashScreen').style.display = 'none', 500);
@@ -490,18 +553,19 @@
   }
 
   function resetFilterSliders() {
-    state.filters = { brightness: 100, contrast: 100, saturate: 100, sepia: 0, hue: 0, shadows: 0, highlights: 0, fade: 0, vignette: 0 };
-    ['brightness', 'contrast', 'saturate', 'sepia', 'shadows', 'highlights', 'fade', 'vignette'].forEach(f => {
+    state.filters = { brightness: 100, contrast: 100, saturate: 100, sepia: 0, hue: 0, shadows: 0, highlights: 0, fade: 0, vignette: 0, grain: 0 };
+    ['brightness', 'contrast', 'saturate', 'sepia', 'shadows', 'highlights', 'fade', 'vignette', 'grain'].forEach(f => {
       $(f + 'Slider').value = state.filters[f];
       let suffix = (f === 'brightness' || f === 'contrast' || f === 'saturate' || f === 'sepia') ? '%' : '';
       $(f + 'Val').textContent = state.filters[f] + suffix;
     });
-    $('vignetteOverlay').style.boxShadow = 'inset 0 0 0px rgba(0,0,0,0)';
-    updateToneLUT(); applyFilters();
+    $('vignetteOverlay').style.background = 'transparent';
+    $('grainOverlay').style.opacity = '0';
+    updateToneLUT(state.filters); applyFilters();
   }
 
-  function updateToneLUT() {
-    const sh = state.filters.shadows, hi = state.filters.highlights, fade = state.filters.fade;
+  function updateToneLUT(f) {
+    const sh = f.shadows, hi = f.highlights, fade = f.fade;
     const pts = [
       {x:0, y:fade}, 
       {x:64, y:64+sh*0.6 + (fade*0.2)}, 
@@ -526,16 +590,21 @@
   }
 
   function applyFilters() {
-    const f = state.filters;
-    cropImage.style.filter = `url(#toneFilter) brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) sepia(${f.sepia}%) hue-rotate(${f.hue}deg)`;
+    if (state.isRaw) {
+      const r = state.rawFilters;
+      updateToneLUT(r);
+      cropImage.style.filter = `url(#toneFilter) brightness(${r.brightness}%) contrast(${r.contrast}%) saturate(${r.saturate}%) sepia(${r.sepia}%) hue-rotate(${r.hue}deg)`;
+    } else {
+      const f = state.filters;
+      updateToneLUT(f);
+      cropImage.style.filter = `url(#toneFilter) brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) sepia(${f.sepia}%) hue-rotate(${f.hue}deg)`;
+    }
   }
 
-  // ОПТИМИЗАЦИЯ ЗАДЕРЖЕК (requestAnimationFrame)
   let filterRafId = null;
   function scheduleFilterUpdate() {
     if (filterRafId) return;
     filterRafId = requestAnimationFrame(() => {
-      updateToneLUT();
       applyFilters();
       filterRafId = null;
     });
@@ -543,7 +612,48 @@
 
   function switchTab(tabName) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
-    ['light', 'color', 'crop', 'presets', 'settings'].forEach(t => $('panel-' + t).classList.toggle('hidden', t !== tabName));
+    ['raw', 'light', 'color', 'crop', 'presets', 'settings'].forEach(t => $('panel-' + t).classList.toggle('hidden', t !== tabName));
+  }
+
+  function bakeRaw() {
+    $('loadingState').classList.remove('hidden');
+    const w = state.imgWidth, h = state.imgHeight;
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    
+    const r = state.rawFilters;
+    ctx.filter = `brightness(${r.brightness}%) contrast(${r.contrast}%) saturate(${r.saturate}%) sepia(${r.sepia}%) hue-rotate(${r.hue}deg)`;
+    ctx.drawImage(state.previewImage, 0, 0, w, h);
+    ctx.filter = 'none';
+    
+    if (state.toneLUT.length === 256) {
+      const imgData = ctx.getImageData(0, 0, w, h), d = imgData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        d[i] = state.toneLUT[d[i]]; d[i+1] = state.toneLUT[d[i+1]]; d[i+2] = state.toneLUT[d[i+2]];
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+    
+    const bakedUrl = canvas.toDataURL('image/jpeg', 0.95);
+    const newImg = new Image();
+    newImg.onload = () => {
+      state.previewImage = newImg;
+      state.fullImage = newImg;
+      state.rawFilters = { brightness: 100, contrast: 100, saturate: 100, sepia: 0, hue: 0, shadows: 0, highlights: 0, fade: 0, temp: 0 };
+      state.isRaw = false;
+      
+      $('bottomBar').style.display = 'flex';
+      $('openExportBtn').style.display = 'flex';
+      $('developBtn').style.display = 'none';
+      
+      updateToneLUT(state.filters);
+      applyFilters();
+      switchTab('crop');
+      $('loadingState').classList.add('hidden');
+      showToast('RAW проявлен успешно');
+    };
+    newImg.src = bakedUrl;
   }
 
   function bindEvents() {
@@ -556,10 +666,10 @@
     $('backBtn').addEventListener('click', () => {
       $('editorScreen').classList.remove('active');
       $('uploadScreen').style.display = 'flex';
-      state.previewImage = null; state.fullImage = null; cropImage.src = '';
+      state.previewImage = null; state.fullImage = null; cropImage.src = ''; state.isRaw = false;
     });
 
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { if (!state.isRaw) switchTab(btn.dataset.tab); }));
 
     $('themeToggle').addEventListener('click', () => {
       const isLight = document.body.classList.toggle('light-mode');
@@ -572,39 +682,97 @@
       $('guides').classList.toggle('active', isOn);
     });
 
-    // Кнопки отражения
     $('flipHBtn').addEventListener('click', () => { state.flipH *= -1; updateImageTransform(); });
     $('flipVBtn').addEventListener('click', () => { state.flipV *= -1; updateImageTransform(); });
 
+    // RAW Sliders
+    $('developBtn').addEventListener('click', bakeRaw);
+    $('rawBrightnessSlider').addEventListener('input', (e) => { state.rawFilters.brightness = parseInt(e.target.value); $('rawBrightnessVal').textContent = e.target.value + '%'; scheduleFilterUpdate(); });
+    $('rawContrastSlider').addEventListener('input', (e) => { state.rawFilters.contrast = parseInt(e.target.value); $('rawContrastVal').textContent = e.target.value + '%'; scheduleFilterUpdate(); });
+    $('rawShadowsSlider').addEventListener('input', (e) => { state.rawFilters.shadows = parseInt(e.target.value); $('rawShadowsVal').textContent = e.target.value; scheduleFilterUpdate(); });
+    $('rawHighlightsSlider').addEventListener('input', (e) => { state.rawFilters.highlights = parseInt(e.target.value); $('rawHighlightsVal').textContent = e.target.value; scheduleFilterUpdate(); });
+    $('rawTempSlider').addEventListener('input', (e) => { 
+      let v = parseInt(e.target.value); 
+      state.rawFilters.temp = v; 
+      $('rawTempVal').textContent = v; 
+      if (v > 0) { state.rawFilters.sepia = v / 100; state.rawFilters.hue = 0; }
+      else { state.rawFilters.sepia = -v / 100; state.rawFilters.hue = 180; }
+      scheduleFilterUpdate(); 
+    });
+
+    // Normal Sliders
     $('zoomSlider').addEventListener('input', (e) => { 
       state.zoom = parseInt(e.target.value) / 100; 
       $('zoomVal').textContent = e.target.value + '%'; 
       constrainOffset(); updateImageTransform(); updateOutputRes(); 
     });
-    
-    // Привязка слайдеров к scheduleFilterUpdate
     $('brightnessSlider').addEventListener('input', (e) => { state.filters.brightness = parseInt(e.target.value); $('brightnessVal').textContent = e.target.value + '%'; scheduleFilterUpdate(); clearPresets(); });
     $('contrastSlider').addEventListener('input', (e) => { state.filters.contrast = parseInt(e.target.value); $('contrastVal').textContent = e.target.value + '%'; scheduleFilterUpdate(); clearPresets(); });
     $('shadowsSlider').addEventListener('input', (e) => { state.filters.shadows = parseInt(e.target.value); $('shadowsVal').textContent = e.target.value; scheduleFilterUpdate(); });
     $('highlightsSlider').addEventListener('input', (e) => { state.filters.highlights = parseInt(e.target.value); $('highlightsVal').textContent = e.target.value; scheduleFilterUpdate(); });
     $('fadeSlider').addEventListener('input', (e) => { state.filters.fade = parseInt(e.target.value); $('fadeVal').textContent = e.target.value; scheduleFilterUpdate(); });
-    
+    $('grainSlider').addEventListener('input', (e) => { 
+      state.filters.grain = parseInt(e.target.value); 
+      $('grainVal').textContent = e.target.value; 
+      $('grainOverlay').style.opacity = (e.target.value / 100) * 0.4; 
+    });
     $('saturateSlider').addEventListener('input', (e) => { state.filters.saturate = parseInt(e.target.value); $('saturateVal').textContent = e.target.value + '%'; scheduleFilterUpdate(); clearPresets(); });
     $('sepiaSlider').addEventListener('input', (e) => { state.filters.sepia = parseInt(e.target.value); $('sepiaVal').textContent = e.target.value + '%'; scheduleFilterUpdate(); clearPresets(); });
-    
-    // Виньетка
     $('vignetteSlider').addEventListener('input', (e) => { 
       const v = parseInt(e.target.value); 
       state.filters.vignette = v; 
       $('vignetteVal').textContent = v; 
-      const blur = 50 + v * 2;
       const opacity = v / 100;
-      $('vignetteOverlay').style.boxShadow = `inset 0 0 ${blur}px ${blur/2}px rgba(0,0,0,${opacity})`;
+      $('vignetteOverlay').style.background = `radial-gradient(circle at center, rgba(0,0,0,0) 40%, rgba(0,0,0,${opacity}) 110%)`;
     });
 
     $('resetFiltersBtn').addEventListener('click', () => { resetFilterSliders(); document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active')); document.querySelector('[data-preset="original"]').classList.add('active'); });
-    $('downloadBtn').addEventListener('click', downloadImage);
+    
+    // EXPORT MODAL LOGIC
+    $('openExportBtn').addEventListener('click', () => {
+      if (!state.isRaw) $('exportModal').classList.add('active');
+    });
+    $('cancelExportBtn').addEventListener('click', () => $('exportModal').classList.remove('active'));
+    
+    document.querySelectorAll('.seg-btn[data-format]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.seg-btn[data-format]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.exportSettings.format = btn.dataset.format;
+        $('qualityWrapper').classList.toggle('hidden', btn.dataset.format !== 'jpg');
+      });
+    });
 
+    $('exportQualitySlider').addEventListener('input', (e) => {
+      state.exportSettings.quality = parseInt(e.target.value);
+      $('exportQualityVal').textContent = e.target.value + '%';
+    });
+
+    $('letterboxToggle').addEventListener('click', () => {
+      const isOn = $('letterboxToggle').classList.toggle('active');
+      state.exportSettings.useLetterbox = isOn;
+      $('letterboxOptions').classList.toggle('hidden', !isOn);
+    });
+
+    document.querySelectorAll('.seg-btn[data-lbratio]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.seg-btn[data-lbratio]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.exportSettings.lbRatio = btn.dataset.lbratio;
+      });
+    });
+
+    document.querySelectorAll('.seg-btn[data-lbcolor]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.seg-btn[data-lbcolor]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.exportSettings.lbColor = btn.dataset.lbcolor;
+      });
+    });
+
+    $('doExportBtn').addEventListener('click', downloadImage);
+
+    // Drag & Zoom Logic
     let isDragging = false, startX = 0, startY = 0, startOffsetX = 0, startOffsetY = 0, rafId = null;
     cropFrame.addEventListener('pointerdown', (e) => {
       if (!state.previewImage) return;
@@ -655,7 +823,7 @@
 
     if (isHeic && typeof heic2any !== 'undefined') {
       heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 })
-        .then(jpegBlob => { if (Array.isArray(jpegBlob)) jpegBlob = jpegBlob[0]; const reader = new FileReader(); reader.onload = (e) => processImage(e.target.result); reader.readAsDataURL(jpegBlob); })
+        .then(jpegBlob => { if (Array.isArray(jpegBlob)) jpegBlob = jpegBlob[0]; const reader = new FileReader(); reader.onload = (e) => processImage(e.target.result, false); reader.readAsDataURL(jpegBlob); })
         .catch(() => { $('loadingState').classList.add('hidden'); showToast('Ошибка конвертации HEIC'); });
     } else if (isRawDng && typeof UTIF !== 'undefined') {
       const reader = new FileReader();
@@ -678,18 +846,15 @@
           
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
-          if (orientation === 6 || orientation === 8) {
-            canvas.width = h; canvas.height = w;
-          } else {
-            canvas.width = w; canvas.height = h;
-          }
+          if (orientation === 6 || orientation === 8) { canvas.width = h; canvas.height = w; } 
+          else { canvas.width = w; canvas.height = h; }
           
           if (orientation === 3) { ctx.translate(w, h); ctx.rotate(Math.PI); }
           else if (orientation === 6) { ctx.translate(h, 0); ctx.rotate(Math.PI / 2); }
           else if (orientation === 8) { ctx.translate(0, w); ctx.rotate(-Math.PI / 2); }
           
           ctx.drawImage(tempCanvas, 0, 0);
-          processImage(canvas.toDataURL('image/jpeg', 0.9));
+          processImage(canvas.toDataURL('image/jpeg', 0.9), true); 
         } catch (err) { 
           $('loadingState').classList.add('hidden'); 
           showToast('Ошибка чтения RAW/DNG'); 
@@ -698,16 +863,16 @@
       reader.readAsArrayBuffer(file);
     } else {
       const reader = new FileReader();
-      reader.onload = (e) => processImage(e.target.result);
+      reader.onload = (e) => processImage(e.target.result, false);
       reader.readAsDataURL(file);
     }
   }
 
-  function processImage(dataUrl) {
+  function processImage(dataUrl, isRaw) {
     const img = new Image();
     img.onload = () => {
       state.fullImage = img; 
-      const maxPreviewDim = 1600;
+      const maxPreviewDim = 1000; 
       if (Math.max(img.naturalWidth, img.naturalHeight) > maxPreviewDim) {
         const scale = maxPreviewDim / Math.max(img.naturalWidth, img.naturalHeight);
         const prevW = Math.round(img.naturalWidth * scale), prevH = Math.round(img.naturalHeight * scale);
@@ -715,22 +880,37 @@
         tempCanvas.width = prevW; tempCanvas.height = prevH;
         tempCanvas.getContext('2d').drawImage(img, 0, 0, prevW, prevH);
         state.previewImage = new Image();
-        state.previewImage.onload = () => { state.imgWidth = prevW; state.imgHeight = prevH; setupPreviewImage(tempCanvas.toDataURL('image/jpeg', 0.9)); };
+        state.previewImage.onload = () => { state.imgWidth = prevW; state.imgHeight = prevH; setupPreviewImage(tempCanvas.toDataURL('image/jpeg', 0.9), isRaw); };
         state.previewImage.src = tempCanvas.toDataURL('image/jpeg', 0.9);
       } else {
         state.previewImage = img;
         state.imgWidth = img.naturalWidth; state.imgHeight = img.naturalHeight;
-        setupPreviewImage(dataUrl);
+        setupPreviewImage(dataUrl, isRaw);
       }
     };
     img.onerror = () => { $('loadingState').classList.add('hidden'); showToast('Не удалось загрузить. Формат не поддерживается.'); };
     img.src = dataUrl;
   }
 
-  function setupPreviewImage(src) {
+  function setupPreviewImage(src, isRaw) {
     cropImage.src = src;
     $('uploadScreen').style.display = 'none';
     $('editorScreen').classList.add('active');
+    
+    if (isRaw) {
+      state.isRaw = true;
+      $('bottomBar').style.display = 'none';
+      $('openExportBtn').style.display = 'none';
+      $('developBtn').style.display = 'flex';
+      switchTab('raw');
+    } else {
+      state.isRaw = false;
+      $('bottomBar').style.display = 'flex';
+      $('openExportBtn').style.display = 'flex';
+      $('developBtn').style.display = 'none';
+      switchTab('crop');
+    }
+    
     setTimeout(() => { updateFrame(); applyFilters(); updateOutputRes(); $('loadingState').classList.add('hidden'); }, 50);
   }
 
@@ -744,13 +924,8 @@
     const availH = Math.max(0, canvasArea.clientHeight - padY);
     
     let frameW, frameH;
-    if (availW / availH > r) {
-      frameH = availH;
-      frameW = frameH * r;
-    } else {
-      frameW = availW;
-      frameH = frameW / r;
-    }
+    if (availW / availH > r) { frameH = availH; frameW = frameH * r; } 
+    else { frameW = availW; frameH = frameW / r; }
 
     cropFrame.style.width = frameW + 'px'; 
     cropFrame.style.height = frameH + 'px';
@@ -789,10 +964,22 @@
     $('zoomSlider').value = 100; $('zoomVal').textContent = '100%';
   }
 
+  // ИСПРАВЛЕНО: Математика отражения (компенсация смещения)
   function updateImageTransform() {
     if (!state.previewImage) return;
     const s = state.baseScale * state.zoom;
-    cropImage.style.transform = `translate3d(${state.offsetX}px, ${state.offsetY}px, 0) scale(${s * state.flipH}, ${s * state.flipV})`;
+    const scaledW = state.imgWidth * s;
+    const scaledH = state.imgHeight * s;
+    
+    let transX = state.offsetX;
+    let transY = state.offsetY;
+    
+    // Если отражаем по горизонтали, нужно сдвинуть фото вправо на его ширину
+    if (state.flipH === -1) transX += scaledW;
+    // Если отражаем по вертикали, нужно сдвинуть фото вниз на его высоту
+    if (state.flipV === -1) transY += scaledH;
+    
+    cropImage.style.transform = `translate3d(${transX}px, ${transY}px, 0) scale(${s * state.flipH}, ${s * state.flipV})`;
   }
 
   function constrainOffset() {
@@ -806,55 +993,99 @@
 
   function downloadImage() {
     if (!state.fullImage) return;
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const origScale = state.fullImage.naturalWidth / (state.imgWidth * state.baseScale * state.zoom);
-    let sx = -state.offsetX * origScale;
-    let sy = -state.offsetY * origScale;
-    let sw = cropFrame.clientWidth * origScale;
-    let sh = cropFrame.clientHeight * origScale;
-    if (sx < 0) { sw += sx; sx = 0; }
-    if (sy < 0) { sh += sy; sy = 0; }
-    if (sx + sw > state.fullImage.naturalWidth) { sw = state.fullImage.naturalWidth - sx; }
-    if (sy + sh > state.fullImage.naturalHeight) { sh = state.fullImage.naturalHeight - sy; }
-    sw = Math.max(1, Math.round(sw)); sh = Math.max(1, Math.round(sh));
-    sx = Math.max(0, Math.round(sx)); sy = Math.max(0, Math.round(sy));
-    canvas.width = sw; canvas.height = sh;
-    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, sw, sh);
+    $('exportModal').classList.remove('active');
+    $('loadingState').classList.remove('hidden');
     
-    const f = state.filters;
-    ctx.filter = `brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) sepia(${f.sepia}%) hue-rotate(${f.hue}deg)`;
-    
-    ctx.save();
-    if (state.flipH === -1) { ctx.translate(sw, 0); ctx.scale(-1, 1); }
-    if (state.flipV === -1) { ctx.translate(0, sh); ctx.scale(1, -1); }
-    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(state.fullImage, sx, sy, sw, sh, 0, 0, sw, sh);
-    ctx.restore();
-    ctx.filter = 'none';
+    setTimeout(() => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const origScale = state.fullImage.naturalWidth / (state.imgWidth * state.baseScale * state.zoom);
+      
+      let sx = -state.offsetX * origScale;
+      let sy = -state.offsetY * origScale;
+      let sw = cropFrame.clientWidth * origScale;
+      let sh = cropFrame.clientHeight * origScale;
+      
+      if (sx < 0) { sw += sx; sx = 0; }
+      if (sy < 0) { sh += sy; sy = 0; }
+      if (sx + sw > state.fullImage.naturalWidth) { sw = state.fullImage.naturalWidth - sx; }
+      if (sy + sh > state.fullImage.naturalHeight) { sh = state.fullImage.naturalHeight - sy; }
+      
+      sw = Math.max(1, Math.round(sw)); sh = Math.max(1, Math.round(sh));
+      sx = Math.max(0, Math.round(sx)); sy = Math.max(0, Math.round(sy));
 
-    if (state.toneLUT.length === 256) {
-      const imgData = ctx.getImageData(0, 0, sw, sh), d = imgData.data;
-      for (let i = 0; i < d.length; i += 4) { d[i] = state.toneLUT[d[i]]; d[i+1] = state.toneLUT[d[i+1]]; d[i+2] = state.toneLUT[d[i+2]]; }
-      ctx.putImageData(imgData, 0, 0);
-    }
+      let finalW = sw, finalH = sh;
+      let drawX = 0, drawY = 0;
 
-    if (state.filters.vignette > 0) {
-      const v = state.filters.vignette;
-      const grad = ctx.createRadialGradient(sw/2, sh/2, Math.min(sw, sh)/2.5, sw/2, sh/2, Math.max(sw, sh)/1.2);
-      grad.addColorStop(0, 'rgba(0,0,0,0)');
-      grad.addColorStop(1, `rgba(0,0,0,${v / 100})`);
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, sw, sh);
-    }
+      if (state.exportSettings.useLetterbox) {
+        const lbRatioParts = state.exportSettings.lbRatio.split(':').map(Number);
+        const targetRatio = lbRatioParts[0] / lbRatioParts[1];
+        const croppedRatio = sw / sh;
 
-    canvas.toBlob((blob) => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `cinematic_${state.ratio.id.replace(':', 'x')}_${Date.now()}.png`;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      URL.revokeObjectURL(url); showToast('Сохранено: ' + sw + '×' + sh);
-    }, 'image/png');
+        if (croppedRatio > targetRatio) {
+          finalW = sw; finalH = sw / targetRatio;
+          drawY = (finalH - sh) / 2;
+        } else if (croppedRatio < targetRatio) {
+          finalH = sh; finalW = sh * targetRatio;
+          drawX = (finalW - sw) / 2;
+        }
+      }
+
+      canvas.width = finalW; canvas.height = finalH;
+      ctx.fillStyle = state.exportSettings.useLetterbox ? state.exportSettings.lbColor : '#000';
+      ctx.fillRect(0, 0, finalW, finalH);
+      
+      const f = state.filters;
+      ctx.filter = `brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) sepia(${f.sepia}%) hue-rotate(${f.hue}deg)`;
+      
+      ctx.save();
+      if (state.flipH === -1) { ctx.translate(finalW, 0); ctx.scale(-1, 1); drawX = finalW - sw - drawX; }
+      if (state.flipV === -1) { ctx.translate(0, finalH); ctx.scale(1, -1); drawY = finalH - sh - drawY; }
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(state.fullImage, sx, sy, sw, sh, drawX, drawY, sw, sh);
+      ctx.restore();
+      ctx.filter = 'none';
+
+      if (state.toneLUT.length === 256 || f.grain > 0) {
+        const imgData = ctx.getImageData(drawX, drawY, sw, sh), d = imgData.data;
+        const grainAmt = f.grain * 0.5;
+        for (let i = 0; i < d.length; i += 4) {
+          if (state.toneLUT.length === 256) {
+            d[i] = state.toneLUT[d[i]]; d[i+1] = state.toneLUT[d[i+1]]; d[i+2] = state.toneLUT[d[i+2]];
+          }
+          if (grainAmt > 0) {
+            const noise = (Math.random() - 0.5) * grainAmt;
+            d[i] = Math.max(0, Math.min(255, d[i] + noise));
+            d[i+1] = Math.max(0, Math.min(255, d[i+1] + noise));
+            d[i+2] = Math.max(0, Math.min(255, d[i+2] + noise));
+          }
+        }
+        ctx.putImageData(imgData, drawX, drawY);
+      }
+
+      if (f.vignette > 0) {
+        const v = f.vignette;
+        const grad = ctx.createRadialGradient(finalW/2, finalH/2, Math.min(finalW, finalH)/3, finalW/2, finalH/2, Math.max(finalW, finalH)/1.2);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, `rgba(0,0,0,${v / 100})`);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, finalW, finalH);
+      }
+
+      const mimeType = state.exportSettings.format === 'jpg' ? 'image/jpeg' : 'image/png';
+      const quality = state.exportSettings.format === 'jpg' ? state.exportSettings.quality / 100 : 1.0;
+      const ext = state.exportSettings.format === 'jpg' ? 'jpg' : 'png';
+
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `cinematic_${state.ratio.id.replace(':', 'x')}_${Date.now()}.${ext}`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url); 
+        $('loadingState').classList.add('hidden');
+        showToast(`Сохранено: ${finalW}×${finalH} (${ext.toUpperCase()})`);
+      }, mimeType, quality);
+    }, 100);
   }
 
   let toastTimer;
