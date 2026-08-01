@@ -63,53 +63,24 @@
   #splashScreen { position: fixed; inset: 0; background: #000000; z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
   #splashScreen.fade-out { opacity: 0; pointer-events: none; }
 
-  .glass {
-    background: var(--lr-panel);
-    backdrop-filter: blur(30px) saturate(180%);
-    -webkit-backdrop-filter: blur(30px) saturate(180%);
-    border: 1px solid var(--lr-border);
-    box-shadow: var(--glass-shadow), var(--glass-highlight);
-  }
-
-  #uploadScreen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; padding: 20px; background: radial-gradient(circle at 50% 20%, #1a1a2e, var(--lr-bg)); }
-  .upload-box { 
-    background: var(--lr-panel);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid var(--lr-border);
-    box-shadow: var(--glass-shadow), var(--glass-highlight);
-    border-radius: 24px;
-  }
-
-  #editorScreen { position: fixed; inset: 0; display: none; flex-direction: column; background: var(--lr-bar); z-index: 20; }
+  /* LAYOUT */
+  #editorScreen { position: fixed; inset: 0; display: none; flex-direction: column; z-index: 20; }
   #editorScreen.active { display: flex; }
   
-  .top-bar { 
-    padding: 12px 16px; padding-top: calc(12px + env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; 
-    background: linear-gradient(to bottom, var(--lr-bar), transparent); 
-    position: absolute; top: 0; left: 0; right: 0; z-index: 30; 
-  }
-  .btn-icon { 
-    width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; 
-    background: var(--card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--lr-border); color: var(--fg); 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2), var(--glass-highlight);
-  }
-  .btn-save { 
-    background: var(--accent); color: #fff; font-weight: 600; padding: 10px 24px; border-radius: 20px; font-size: 14px; 
-    box-shadow: 0 4px 15px rgba(10, 132, 255, 0.4), var(--glass-highlight); 
-    border: none;
+  @media (min-width: 1024px) {
+    #editorScreen { flex-direction: row; }
   }
 
-  .canvas-area { flex: 1; position: relative; overflow: hidden; background: var(--lr-canvas); display: flex; align-items: center; justify-content: center; padding-top: calc(80px + env(safe-area-inset-top)); padding-bottom: calc(340px + env(safe-area-inset-bottom)); }
+  .top-bar { padding: 12px 16px; padding-top: calc(12px + env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, var(--lr-bar), transparent); position: absolute; top: 0; left: 0; right: 0; z-index: 30; }
+  .btn-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--lr-border); color: var(--fg); box-shadow: 0 4px 12px rgba(0,0,0,0.2), var(--glass-highlight); }
+  .btn-save { background: var(--accent); color: #fff; font-weight: 600; padding: 10px 24px; border-radius: 20px; font-size: 14px; box-shadow: 0 4px 15px rgba(10, 132, 255, 0.4), var(--glass-highlight); border: none; }
+
+  .canvas-area { flex: 1; position: relative; overflow: hidden; background: var(--lr-canvas); display: flex; align-items: center; justify-content: center; }
   .crop-frame { position: relative; overflow: hidden; background: #000; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 0 0 9999px var(--lr-shadow), 0 0 40px rgba(10, 132, 255, 0.1); touch-action: none; border-radius: 4px; }
   .crop-image { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform, filter; user-select: none; -webkit-user-drag: none; pointer-events: none; max-width: none; }
 
   #vignetteOverlay { position: absolute; inset: 0; pointer-events: none; z-index: 5; background: transparent; }
-  #grainOverlay { 
-    position: absolute; inset: 0; pointer-events: none; z-index: 6; opacity: 0; transition: opacity 0.2s; 
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    mix-blend-mode: overlay;
-  }
+  #grainOverlay { position: absolute; inset: 0; pointer-events: none; z-index: 6; opacity: 0; transition: opacity 0.2s; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); mix-blend-mode: overlay; }
 
   .guides { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 10; }
   .guides.active { opacity: 1; }
@@ -117,113 +88,75 @@
   .guides-v1 { top: 0; bottom: 0; left: 33.333%; width: 1px; } .guides-v2 { top: 0; bottom: 0; left: 66.666%; width: 1px; }
   .guides-h1 { left: 0; right: 0; top: 33.333%; height: 1px; } .guides-h2 { left: 0; right: 0; top: 66.666%; height: 1px; }
 
-  .floating-panel { position: absolute; bottom: calc(90px + env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 40; padding: 0 12px; }
-  .slider-carousel { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 8px 4px 12px; }
-  .slider-carousel::-webkit-scrollbar { display: none; }
-  .slider-card { 
-    min-width: 75vw; max-width: 85vw; scroll-snap-align: center; border-radius: 20px; padding: 16px; 
-    background: var(--lr-panel);
-    backdrop-filter: blur(40px) saturate(180%);
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
-    border: 1px solid var(--lr-border);
-    box-shadow: var(--glass-shadow), var(--glass-highlight);
+  /* CONTROLS PANEL (Mobile Bottom / Desktop Sidebar) */
+  .controls-panel { 
+    background: var(--lr-bar); backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%); 
+    z-index: 40; display: flex; flex-direction: column;
+    border-top: 1px solid var(--lr-border);
   }
+  @media (max-width: 1023px) {
+    .controls-panel { position: absolute; bottom: 0; left: 0; right: 0; height: 45vh; border-radius: 24px 24px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.3); padding-bottom: env(safe-area-inset-bottom); }
+  }
+  @media (min-width: 1024px) {
+    .controls-panel { width: 340px; height: 100%; border-top: none; border-left: 1px solid var(--lr-border); }
+  }
+
+  .tab-bar { display: flex; border-bottom: 1px solid var(--lr-border); padding: 8px; gap: 4px; }
+  @media (min-width: 1024px) { .tab-bar { padding: 12px; } }
   
-  .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-  .slider-label { font-size: 13px; color: var(--lr-text-light); font-weight: 600; }
-  .slider-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent); font-weight: 500; }
-
-  input[type="range"].lr-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; background: var(--lr-border); border-radius: 3px; outline: none; }
-  input[type="range"].lr-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.05); border: none; }
-  input[type="range"].lr-slider::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; background: #fff; cursor: pointer; border: none; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
-
-  .bottom-bar { 
-    position: absolute;
-    bottom: calc(5px + env(safe-area-inset-bottom));
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 20px);
-    max-width: 420px;
-    height: 60px;
-    background: var(--lr-bar);
-    backdrop-filter: blur(30px) saturate(180%);
-    -webkit-backdrop-filter: blur(30px) saturate(180%);
-    border: 1px solid var(--lr-border);
-    border-radius: 30px; 
-    box-shadow: var(--glass-shadow), var(--glass-highlight);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    z-index: 50;
-    padding: 0 10px;
-  }
-  .tab-btn { 
-    display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--lr-text-muted); 
-    background: none; border: none; padding: 8px 12px; transition: all 0.2s; 
-    border-radius: 20px; flex: 1;
-  }
+  .tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--lr-text-muted); background: none; border: none; padding: 8px 4px; transition: all 0.2s; border-radius: 12px; }
   .tab-btn.active { color: var(--accent); background: rgba(255,255,255,0.05); }
   body.light-mode .tab-btn.active { background: rgba(0,0,0,0.05); }
   .tab-btn span { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  @media (min-width: 1024px) { .tab-btn span { font-size: 11px; } }
+
+  .panel-content { flex: 1; overflow-y: auto; padding: 16px; scrollbar-width: none; }
+  .panel-content::-webkit-scrollbar { display: none; }
+
+  .control-group { margin-bottom: 20px; }
+  .control-group:last-child { margin-bottom: 0; }
+  .control-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .control-name { font-size: 13px; color: var(--lr-text-light); font-weight: 600; }
+  .control-value { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); font-weight: 500; }
+
+  input[type="range"].lr-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; background: var(--lr-border); border-radius: 3px; outline: none; }
+  input[type="range"].lr-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; border-radius: 50%; background: #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.05); border: none; }
+  input[type="range"].lr-slider::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: #fff; cursor: pointer; border: none; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
 
   .crop-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .ratio-btn { 
-    background: var(--border-2); border: 1px solid transparent; border-radius: 12px; padding: 10px 4px; text-align: center; transition: all 0.2s; color: var(--fg); 
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  }
-  .ratio-btn.active { 
-    background: var(--accent); color: #fff; 
-    box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3), var(--glass-highlight);
-  }
+  .ratio-btn { background: var(--border-2); border: 1px solid transparent; border-radius: 12px; padding: 10px 4px; text-align: center; transition: all 0.2s; color: var(--fg); }
+  .ratio-btn.active { background: var(--accent); color: #fff; box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
   .preset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .preset-btn { 
-    background: var(--border-2); border: 1px solid transparent; border-radius: 12px; padding: 12px 4px; text-align: center; transition: all 0.2s; font-size: 12px; color: var(--fg); font-weight: 500; 
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  }
-  .preset-btn.active { 
-    background: var(--accent); color: #fff; 
-    box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3), var(--glass-highlight);
-  }
+  .preset-btn { background: var(--border-2); border: 1px solid transparent; border-radius: 12px; padding: 12px 4px; text-align: center; transition: all 0.2s; font-size: 12px; color: var(--fg); font-weight: 500; }
+  .preset-btn.active { background: var(--accent); color: #fff; box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
 
-  .flip-btn { 
-    background: var(--border-2); border: 1px solid transparent; border-radius: 12px; padding: 10px; text-align: center; transition: all 0.2s; color: var(--fg); font-weight: 600; font-size: 12px;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-  }
+  .flip-btn { background: var(--border-2); border: 1px solid transparent; border-radius: 12px; padding: 12px; text-align: center; transition: all 0.2s; color: var(--fg); font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; }
   .flip-btn:active { background: var(--accent); color: #fff; }
 
-  .toggle-btn { 
-    transition: all 0.3s cubic-bezier(.4,0,.2,1); width: 51px; height: 31px; border-radius: 16px; 
-    background: rgba(120, 120, 128, 0.3); border: 1px solid rgba(255,255,255,0.1); position: relative; cursor: pointer; 
-  }
-  .toggle-btn .dot { 
-    transition: all 0.3s cubic-bezier(.4,0,.2,1); position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; 
-    background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.3); 
-  }
+  .toggle-btn { transition: all 0.3s cubic-bezier(.4,0,.2,1); width: 51px; height: 31px; border-radius: 16px; background: rgba(120, 120, 128, 0.3); border: 1px solid rgba(255,255,255,0.1); position: relative; cursor: pointer; flex-shrink: 0; }
+  .toggle-btn .dot { transition: all 0.3s cubic-bezier(.4,0,.2,1); position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.3); }
   .toggle-btn.active { background: var(--accent); border-color: transparent; box-shadow: 0 0 15px rgba(10, 132, 255, 0.3); }
   .toggle-btn.active .dot { transform: translateX(20px); }
-
-  .toast { 
-    opacity: 0; visibility: hidden; transform: translate(-50%, 20px); transition: all 0.4s cubic-bezier(.4,0,.2,1); bottom: calc(100px + env(safe-area-inset-bottom)); 
-    background: var(--lr-panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
-    border: 1px solid var(--lr-border); color: var(--fg); 
-    box-shadow: var(--glass-shadow);
-    border-radius: 20px;
-  } 
-  .toast.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
 
   .settings-section { border-top: 1px solid var(--lr-border); padding-top: 16px; margin-top: 16px; }
   .settings-label { font-size: 13px; color: var(--lr-text-muted); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px; font-weight: 600; }
 
   /* EXPORT MODAL */
-  #exportModal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 300; display: none; align-items: flex-end; justify-content: center; padding: 20px; padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
+  #exportModal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 300; display: none; align-items: center; justify-content: center; padding: 20px; }
   #exportModal.active { display: flex; animation: fadeIn 0.2s ease; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   .export-card { width: 100%; max-width: 360px; background: var(--lr-panel); backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%); border-radius: 24px; border: 1px solid var(--lr-border); padding: 24px; box-shadow: var(--glass-shadow), var(--glass-highlight); animation: slideUp 0.3s cubic-bezier(.4,0,.2,1); }
   @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  
   .segmented { display: flex; background: var(--border-2); border-radius: 10px; padding: 2px; gap: 2px; }
   .seg-btn { flex: 1; padding: 8px; text-align: center; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--muted); border: none; background: transparent; transition: all 0.2s; }
   .seg-btn.active { background: var(--accent); color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+
+  #uploadScreen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; padding: 20px; background: radial-gradient(circle at 50% 20%, #1a1a2e, var(--lr-bg)); }
+  .upload-box { background: var(--lr-panel); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid var(--lr-border); box-shadow: var(--glass-shadow), var(--glass-highlight); border-radius: 24px; }
+
+  .toast { opacity: 0; visibility: hidden; transform: translate(-50%, 20px); transition: all 0.4s cubic-bezier(.4,0,.2,1); bottom: calc(50vh + 20px); left: 50%; background: var(--lr-panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--lr-border); color: var(--fg); box-shadow: var(--glass-shadow); border-radius: 20px; padding: 10px 20px; } 
+  @media (min-width: 1024px) { .toast { bottom: 40px; } }
+  .toast.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
 </style>
 </head>
 <body>
@@ -249,143 +182,125 @@
     <p class="text-xs tracking-[0.3em] text-muted uppercase mt-1">CINEMATIC CROP STUDIO</p>
   </div>
   <div id="dropZone" class="upload-box p-10 text-center cursor-pointer" onclick="document.getElementById('fileInput').click()">
-    <div class="w-16 h-16 mx-auto mb-4 border border-accent rounded-2xl flex items-center justify-center glass" style="background: rgba(10, 132, 255, 0.1);">
+    <div class="w-16 h-16 mx-auto mb-4 border border-accent rounded-2xl flex items-center justify-center" style="background: rgba(10, 132, 255, 0.1);">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-accent"><rect x="3" y="3" width="18" height="18" rx="1"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
     </div>
     <div class="font-display text-2xl tracking-wider mb-2" style="color: var(--fg);">ВЫБРАТЬ ФОТО</div>
     <div class="text-xs text-muted tracking-wider">JPG, PNG, HEIC, RAW (DNG)</div>
   </div>
-  <div class="absolute bottom-6 text-xs text-muted font-mono">v<span id="uploadVersion">1.3.1</span></div>
+  <div class="absolute bottom-6 text-xs text-muted font-mono">v<span id="uploadVersion">1.4.0</span></div>
   <input type="file" id="fileInput" accept="image/*, image/heic, image/heif, .heic, .heif, .dng, .tiff, .tif, .cr2, .nef, .arw" class="hidden">
 </div>
 
 <div id="editorScreen">
-  <div class="top-bar">
-    <button class="btn-icon" id="backBtn">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    </button>
-    <div class="text-center">
-      <div class="text-xs text-muted font-mono truncate max-w-[150px]" id="fileName">image.jpg</div>
-      <div class="text-[10px] font-mono flex items-center justify-center gap-1.5">
-        <span id="currentRatio" class="text-accent">2.39 : 1</span>
-        <span class="text-muted">/</span>
-        <span id="outputRes" class="text-muted">— × —</span>
-      </div>
-    </div>
-    <button class="btn-save" id="openExportBtn">Сохранить</button>
-    <button class="btn-save" id="developBtn" style="display: none;">Проявить</button>
-  </div>
-
   <div class="canvas-area" id="canvasArea">
+    <div class="top-bar">
+      <button class="btn-icon" id="backBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <div class="text-center">
+        <div class="text-xs text-muted font-mono truncate max-w-[150px]" id="fileName">image.jpg</div>
+        <div class="text-[10px] font-mono flex items-center justify-center gap-1.5">
+          <span id="currentRatio" class="text-accent">2.39 : 1</span>
+          <span class="text-muted">/</span>
+          <span id="outputRes" class="text-muted">— × —</span>
+        </div>
+      </div>
+      <button class="btn-save" id="openExportBtn">Сохранить</button>
+    </div>
+
     <div id="cropFrame" class="crop-frame">
       <img id="cropImage" class="crop-image" alt="" draggable="false">
       <div id="vignetteOverlay"></div>
       <div id="grainOverlay"></div>
       <div id="guides" class="guides"><div class="guides-v1"></div><div class="guides-v2"></div><div class="guides-h1"></div><div class="guides-h2"></div></div>
     </div>
-    
-    <div class="floating-panel">
-      <div id="panel-raw" class="hidden">
-        <div class="slider-carousel">
-          <div class="slider-card"><div class="slider-header"><span class="slider-label">Экспозиция</span><span class="slider-value" id="rawBrightnessVal">100%</span></div><input type="range" class="lr-slider" id="rawBrightnessSlider" min="50" max="150" value="100"></div>
-          <div class="slider-card"><div class="slider-header"><span class="slider-label">Контраст</span><span class="slider-value" id="rawContrastVal">100%</span></div><input type="range" class="lr-slider" id="rawContrastSlider" min="50" max="150" value="100"></div>
-          <div class="slider-card"><div class="slider-header"><span class="slider-label">Света</span><span class="slider-value" id="rawHighlightsVal">0</span></div><input type="range" class="lr-slider" id="rawHighlightsSlider" min="-100" max="100" value="0"></div>
-          <div class="slider-card"><div class="slider-header"><span class="slider-label">Тени</span><span class="slider-value" id="rawShadowsVal">0</span></div><input type="range" class="lr-slider" id="rawShadowsSlider" min="-100" max="100" value="0"></div>
-          <div class="slider-card"><div class="slider-header"><span class="slider-label">Температура</span><span class="slider-value" id="rawTempVal">0</span></div><input type="range" class="lr-slider" id="rawTempSlider" min="-100" max="100" value="0"></div>
+  </div>
+
+  <div class="controls-panel">
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="crop"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg><span>Кадр</span></button>
+      <button class="tab-btn" data-tab="light"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span>Свет</span></button>
+      <button class="tab-btn" data-tab="color"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg><span>Цвет</span></button>
+      <button class="tab-btn" data-tab="presets"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/></svg><span>Стиль</span></button>
+      <button class="tab-btn" data-tab="settings"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><span>Настр.</span></button>
+    </div>
+
+    <div class="panel-content">
+      <div id="panel-crop" class="hidden">
+        <div class="control-group">
+          <div class="control-label"><span class="control-name">Масштаб</span><span class="control-value" id="zoomVal">100%</span></div>
+          <input type="range" class="lr-slider" id="zoomSlider" min="100" max="300" value="100" step="1">
         </div>
+        
+        <div class="control-group flex gap-2">
+          <button id="flipHBtn" class="flip-btn flex-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg>
+            <span>Горизонт</span>
+          </button>
+          <button id="flipVBtn" class="flip-btn flex-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12H3M7 8l5-4 5 4M7 16l5 4 5-4"/></svg>
+            <span>Вертикаль</span>
+          </button>
+        </div>
+
+        <div class="settings-label" style="margin-top: 24px;">ФОРМАТ КАДРА</div>
+        <div class="crop-grid" id="ratioGrid"></div>
       </div>
 
       <div id="panel-light" class="hidden">
-        <div class="slider-carousel">
-          <div class="slider-card"><div class="slider-header"><span class="slider-label">Света</span><span class="slider-value" id="highlightsVal">0</span></div><input type="range" class="lr-slider" id="highlightsSlider" min="-100" max="100" value="0"></div>
-          <div class="slider-card"><div class="slider-header"><span class="slider-label">Тени</span><span class="slider-value" id="shadowsVal">0</span></div><input type="range" class="lr-slider" id="shadowsSlider" min="-100" max="100" value="0"></div>
-          <div class="slider-card"><div class="slider-header"><span class="slider-label">Фад</span><span class="slider-value" id="fadeVal">0</span></div><input type="range" class="lr-slider" id="fadeSlider" min="0" max="100" value="0"></div>
-          <div class="slider-card"><div class="slider-header"><span class="slider-label">Зерно</span><span class="slider-value" id="grainVal">0</span></div><input type="range" class="lr-slider" id="grainSlider" min="0" max="100" value="0"></div>
-          <div class="slider-card"><div class="slider-header"><span class="slider-label">Экспозиция</span><span class="slider-value" id="brightnessVal">100%</span></div><input type="range" class="lr-slider" id="brightnessSlider" min="50" max="150" value="100"></div>
-          <div class="slider-card"><div class="slider-header"><span class="slider-label">Контраст</span><span class="slider-value" id="contrastVal">100%</span></div><input type="range" class="lr-slider" id="contrastSlider" min="50" max="150" value="100"></div>
-        </div>
+        <div class="control-group"><div class="control-label"><span class="control-name">Экспозиция</span><span class="control-value" id="brightnessVal">100%</span></div><input type="range" class="lr-slider" id="brightnessSlider" min="50" max="150" value="100"></div>
+        <div class="control-group"><div class="control-label"><span class="control-name">Контраст</span><span class="control-value" id="contrastVal">100%</span></div><input type="range" class="lr-slider" id="contrastSlider" min="50" max="150" value="100"></div>
+        <div class="control-group"><div class="control-label"><span class="control-name">Света</span><span class="control-value" id="highlightsVal">0</span></div><input type="range" class="lr-slider" id="highlightsSlider" min="-100" max="100" value="0"></div>
+        <div class="control-group"><div class="control-label"><span class="control-name">Тени</span><span class="control-value" id="shadowsVal">0</span></div><input type="range" class="lr-slider" id="shadowsSlider" min="-100" max="100" value="0"></div>
+        <div class="control-group"><div class="control-label"><span class="control-name">Фад (Выцветание)</span><span class="control-value" id="fadeVal">0</span></div><input type="range" class="lr-slider" id="fadeSlider" min="0" max="100" value="0"></div>
+        <div class="control-group"><div class="control-label"><span class="control-name">Зерно</span><span class="control-value" id="grainVal">0</span></div><input type="range" class="lr-slider" id="grainSlider" min="0" max="100" value="0"></div>
       </div>
 
       <div id="panel-color" class="hidden">
-        <div class="slider-carousel">
-          <div class="slider-card"><div class="slider-header"><span class="slider-label">Насыщенность</span><span class="slider-value" id="saturateVal">100%</span></div><input type="range" class="lr-slider" id="saturateSlider" min="0" max="200" value="100"></div>
-          <div class="slider-card"><div class="slider-header"><span class="slider-label">Тепло</span><span class="slider-value" id="sepiaVal">0%</span></div><input type="range" class="lr-slider" id="sepiaSlider" min="0" max="100" value="0"></div>
-          <div class="slider-card"><div class="slider-header"><span class="slider-label">Виньетка</span><span class="slider-value" id="vignetteVal">0</span></div><input type="range" class="lr-slider" id="vignetteSlider" min="0" max="100" value="0"></div>
-        </div>
-      </div>
-
-      <div id="panel-crop" class="hidden">
-        <div class="slider-card" style="max-width: 100%; margin: 0 auto;">
-          <div class="slider-header"><span class="slider-label">Масштаб</span><span class="slider-value" id="zoomVal">100%</span></div>
-          <input type="range" class="lr-slider" id="zoomSlider" min="100" max="300" value="100" step="1">
-          
-          <div class="mt-4 flex gap-2">
-            <button id="flipHBtn" class="flip-btn flex-1">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg>
-              <span>Горизонт</span>
-            </button>
-            <button id="flipVBtn" class="flip-btn flex-1">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12H3M7 8l5-4 5 4M7 16l5 4 5-4"/></svg>
-              <span>Вертикаль</span>
-            </button>
-          </div>
-
-          <div class="mt-4"><div class="settings-label">ФОРМАТ КАДРА</div><div class="crop-grid" id="ratioGrid"></div></div>
-        </div>
+        <div class="control-group"><div class="control-label"><span class="control-name">Насыщенность</span><span class="control-value" id="saturateVal">100%</span></div><input type="range" class="lr-slider" id="saturateSlider" min="0" max="200" value="100"></div>
+        <div class="control-group"><div class="control-label"><span class="control-name">Тепло</span><span class="control-value" id="sepiaVal">0%</span></div><input type="range" class="lr-slider" id="sepiaSlider" min="0" max="100" value="0"></div>
+        <div class="control-group"><div class="control-label"><span class="control-name">Виньетка</span><span class="control-value" id="vignetteVal">0</span></div><input type="range" class="lr-slider" id="vignetteSlider" min="0" max="100" value="0"></div>
       </div>
 
       <div id="panel-presets" class="hidden">
-        <div class="slider-card" style="max-width: 100%; margin: 0 auto;">
-          <div class="settings-label">КИНОШНЫЕ ФИЛЬТРЫ</div>
-          <div class="preset-grid" id="presetGrid"></div>
-          <button id="resetFiltersBtn" class="mt-4 w-full text-xs text-muted py-2.5 rounded-xl" style="background: var(--border-2); font-weight: 600;">Сбросить коррекцию</button>
-        </div>
+        <div class="settings-label">КИНОШНЫЕ ФИЛЬТРЫ</div>
+        <div class="preset-grid" id="presetGrid"></div>
+        <button id="resetFiltersBtn" class="mt-4 w-full text-xs text-muted py-2.5 rounded-xl" style="background: var(--border-2); font-weight: 600;">Сбросить коррекцию</button>
       </div>
 
       <div id="panel-settings" class="hidden">
-        <div class="slider-card" style="max-width: 100%; margin: 0 auto;">
-          <div class="settings-label">ОФОРМЛЕНИЕ</div>
-          <div class="flex items-center justify-between mb-4">
-            <span class="text-sm" style="color: var(--fg); font-weight: 500;">Светлая тема</span>
-            <button id="themeToggle" class="toggle-btn"><span class="dot"></span></button>
-          </div>
-          <div class="flex items-center justify-between">
-            <span class="text-sm" style="color: var(--fg); font-weight: 500;">Сетка композиции</span>
-            <button id="guidesToggle" class="toggle-btn"><span class="dot"></span></button>
-          </div>
+        <div class="settings-label">ОФОРМЛЕНИЕ</div>
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-sm" style="color: var(--fg); font-weight: 500;">Светлая тема</span>
+          <button id="themeToggle" class="toggle-btn"><span class="dot"></span></button>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-sm" style="color: var(--fg); font-weight: 500;">Сетка композиции</span>
+          <button id="guidesToggle" class="toggle-btn"><span class="dot"></span></button>
+        </div>
 
-          <div class="settings-section">
-            <div class="settings-label">О ПРИЛОЖЕНИИ</div>
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-sm" style="color: var(--fg); font-weight: 500;">Версия</span>
-              <span class="font-mono text-sm text-accent" id="settingsVersion">1.3.1</span>
-            </div>
-            <div class="text-xs text-muted mt-2 leading-relaxed">
-              FRAME 2.39 — это инструмент для придания фотографиям кинематографического вида. Работает локально в вашем браузере. Фотографии никуда не загружаются.
-            </div>
+        <div class="settings-section">
+          <div class="settings-label">О ПРИЛОЖЕНИИ</div>
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-sm" style="color: var(--fg); font-weight: 500;">Версия</span>
+            <span class="font-mono text-sm text-accent" id="settingsVersion">1.4.0</span>
           </div>
-
-          <div class="settings-section">
-            <div class="settings-label">АВТОР</div>
-            <div class="text-sm mb-1" style="color: var(--fg); font-weight: 500;">Разработано [Твоё Имя / Ник]</div>
-            <a href="#" class="text-xs text-accent" style="font-weight: 500;">Связаться в Telegram</a>
+          <div class="text-xs text-muted mt-2 leading-relaxed">
+            FRAME 2.39 — это инструмент для придания фотографиям кинематографического вида. Работает локально в вашем браузере. Фотографии никуда не загружаются.
           </div>
         </div>
+
+        <div class="settings-section">
+          <div class="settings-label">АВТОР</div>
+          <div class="text-sm mb-1" style="color: var(--fg); font-weight: 500;">Разработано [Твоё Имя / Ник]</div>
+          <a href="#" class="text-xs text-accent" style="font-weight: 500;">Связаться в Telegram</a>
+        </div>
       </div>
-
     </div>
-  </div>
-
-  <div class="bottom-bar" id="bottomBar">
-    <button class="tab-btn active" data-tab="crop"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg><span>Кадр</span></button>
-    <button class="tab-btn" data-tab="light"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span>Свет</span></button>
-    <button class="tab-btn" data-tab="color"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg><span>Цвет</span></button>
-    <button class="tab-btn" data-tab="presets"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/></svg><span>Стиль</span></button>
-    <button class="tab-btn" data-tab="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><span>Настр.</span></button>
   </div>
 </div>
 
-<!-- EXPORT MODAL -->
 <div id="exportModal">
   <div class="export-card">
     <h3 class="settings-label" style="margin-bottom: 16px;">ФОРМАТ ФАЙЛА</h3>
@@ -394,7 +309,7 @@
       <button class="seg-btn" data-format="jpg">JPG</button>
     </div>
     <div id="qualityWrapper" class="hidden mb-4">
-      <div class="slider-header"><span class="slider-label">Качество JPG</span><span class="slider-value" id="exportQualityVal">95%</span></div>
+      <div class="control-label"><span class="control-name">Качество JPG</span><span class="control-value" id="exportQualityVal">95%</span></div>
       <input type="range" class="lr-slider" id="exportQualitySlider" min="10" max="100" value="95">
     </div>
     
@@ -427,12 +342,12 @@
   </div>
 </div>
 
-<div id="toast" class="toast fixed left-1/2 px-5 py-2.5 text-xs z-[200] pointer-events-none flex items-center gap-2">
+<div id="toast" class="toast fixed text-xs z-[200] pointer-events-none flex items-center gap-2">
   <span id="toastMessage"></span>
 </div>
 
 <script>
-  const APP_VERSION = "1.3.1";
+  const APP_VERSION = "1.4.0";
   
   const RATIOS = [
     { id: '2.39:1', label: '2.39', sub: 'CINEMA', w: 2.39, h: 1 }, { id: '2.35:1', label: '2.35', sub: 'ANAMORPH', w: 2.35, h: 1 },
@@ -450,13 +365,11 @@
   ];
 
   const state = {
-    isRaw: false,
     fullImage: null, previewImage: null, imgWidth: 0, imgHeight: 0,
     offsetX: 0, offsetY: 0, zoom: 1, baseScale: 1,
     flipH: 1, flipV: 1,
     ratio: RATIOS[0], fileName: '', activePreset: 'original',
     filters: { brightness: 100, contrast: 100, saturate: 100, sepia: 0, hue: 0, shadows: 0, highlights: 0, fade: 0, vignette: 0, grain: 0 },
-    rawFilters: { brightness: 100, contrast: 100, saturate: 100, sepia: 0, hue: 0, shadows: 0, highlights: 0, fade: 0, temp: 0 },
     toneLUT: [],
     exportSettings: { format: 'png', quality: 95, useLetterbox: false, lbRatio: '1:1', lbColor: '#000000' }
   };
@@ -590,15 +503,9 @@
   }
 
   function applyFilters() {
-    if (state.isRaw) {
-      const r = state.rawFilters;
-      updateToneLUT(r);
-      cropImage.style.filter = `url(#toneFilter) brightness(${r.brightness}%) contrast(${r.contrast}%) saturate(${r.saturate}%) sepia(${r.sepia}%) hue-rotate(${r.hue}deg)`;
-    } else {
-      const f = state.filters;
-      updateToneLUT(f);
-      cropImage.style.filter = `url(#toneFilter) brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) sepia(${f.sepia}%) hue-rotate(${f.hue}deg)`;
-    }
+    const f = state.filters;
+    updateToneLUT(f);
+    cropImage.style.filter = `url(#toneFilter) brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) sepia(${f.sepia}%) hue-rotate(${f.hue}deg)`;
   }
 
   let filterRafId = null;
@@ -612,48 +519,7 @@
 
   function switchTab(tabName) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
-    ['raw', 'light', 'color', 'crop', 'presets', 'settings'].forEach(t => $('panel-' + t).classList.toggle('hidden', t !== tabName));
-  }
-
-  function bakeRaw() {
-    $('loadingState').classList.remove('hidden');
-    const w = state.imgWidth, h = state.imgHeight;
-    const canvas = document.createElement('canvas');
-    canvas.width = w; canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    
-    const r = state.rawFilters;
-    ctx.filter = `brightness(${r.brightness}%) contrast(${r.contrast}%) saturate(${r.saturate}%) sepia(${r.sepia}%) hue-rotate(${r.hue}deg)`;
-    ctx.drawImage(state.previewImage, 0, 0, w, h);
-    ctx.filter = 'none';
-    
-    if (state.toneLUT.length === 256) {
-      const imgData = ctx.getImageData(0, 0, w, h), d = imgData.data;
-      for (let i = 0; i < d.length; i += 4) {
-        d[i] = state.toneLUT[d[i]]; d[i+1] = state.toneLUT[d[i+1]]; d[i+2] = state.toneLUT[d[i+2]];
-      }
-      ctx.putImageData(imgData, 0, 0);
-    }
-    
-    const bakedUrl = canvas.toDataURL('image/jpeg', 0.95);
-    const newImg = new Image();
-    newImg.onload = () => {
-      state.previewImage = newImg;
-      state.fullImage = newImg;
-      state.rawFilters = { brightness: 100, contrast: 100, saturate: 100, sepia: 0, hue: 0, shadows: 0, highlights: 0, fade: 0, temp: 0 };
-      state.isRaw = false;
-      
-      $('bottomBar').style.display = 'flex';
-      $('openExportBtn').style.display = 'flex';
-      $('developBtn').style.display = 'none';
-      
-      updateToneLUT(state.filters);
-      applyFilters();
-      switchTab('crop');
-      $('loadingState').classList.add('hidden');
-      showToast('RAW проявлен успешно');
-    };
-    newImg.src = bakedUrl;
+    ['light', 'color', 'crop', 'presets', 'settings'].forEach(t => $('panel-' + t).classList.toggle('hidden', t !== tabName));
   }
 
   function bindEvents() {
@@ -666,10 +532,10 @@
     $('backBtn').addEventListener('click', () => {
       $('editorScreen').classList.remove('active');
       $('uploadScreen').style.display = 'flex';
-      state.previewImage = null; state.fullImage = null; cropImage.src = ''; state.isRaw = false;
+      state.previewImage = null; state.fullImage = null; cropImage.src = '';
     });
 
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { if (!state.isRaw) switchTab(btn.dataset.tab); }));
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
     $('themeToggle').addEventListener('click', () => {
       const isLight = document.body.classList.toggle('light-mode');
@@ -685,22 +551,6 @@
     $('flipHBtn').addEventListener('click', () => { state.flipH *= -1; updateImageTransform(); });
     $('flipVBtn').addEventListener('click', () => { state.flipV *= -1; updateImageTransform(); });
 
-    // RAW Sliders
-    $('developBtn').addEventListener('click', bakeRaw);
-    $('rawBrightnessSlider').addEventListener('input', (e) => { state.rawFilters.brightness = parseInt(e.target.value); $('rawBrightnessVal').textContent = e.target.value + '%'; scheduleFilterUpdate(); });
-    $('rawContrastSlider').addEventListener('input', (e) => { state.rawFilters.contrast = parseInt(e.target.value); $('rawContrastVal').textContent = e.target.value + '%'; scheduleFilterUpdate(); });
-    $('rawShadowsSlider').addEventListener('input', (e) => { state.rawFilters.shadows = parseInt(e.target.value); $('rawShadowsVal').textContent = e.target.value; scheduleFilterUpdate(); });
-    $('rawHighlightsSlider').addEventListener('input', (e) => { state.rawFilters.highlights = parseInt(e.target.value); $('rawHighlightsVal').textContent = e.target.value; scheduleFilterUpdate(); });
-    $('rawTempSlider').addEventListener('input', (e) => { 
-      let v = parseInt(e.target.value); 
-      state.rawFilters.temp = v; 
-      $('rawTempVal').textContent = v; 
-      if (v > 0) { state.rawFilters.sepia = v / 100; state.rawFilters.hue = 0; }
-      else { state.rawFilters.sepia = -v / 100; state.rawFilters.hue = 180; }
-      scheduleFilterUpdate(); 
-    });
-
-    // Normal Sliders
     $('zoomSlider').addEventListener('input', (e) => { 
       state.zoom = parseInt(e.target.value) / 100; 
       $('zoomVal').textContent = e.target.value + '%'; 
@@ -728,10 +578,7 @@
 
     $('resetFiltersBtn').addEventListener('click', () => { resetFilterSliders(); document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active')); document.querySelector('[data-preset="original"]').classList.add('active'); });
     
-    // EXPORT MODAL LOGIC
-    $('openExportBtn').addEventListener('click', () => {
-      if (!state.isRaw) $('exportModal').classList.add('active');
-    });
+    $('openExportBtn').addEventListener('click', () => $('exportModal').classList.add('active'));
     $('cancelExportBtn').addEventListener('click', () => $('exportModal').classList.remove('active'));
     
     document.querySelectorAll('.seg-btn[data-format]').forEach(btn => {
@@ -772,11 +619,10 @@
 
     $('doExportBtn').addEventListener('click', downloadImage);
 
-    // Drag & Zoom Logic
     let isDragging = false, startX = 0, startY = 0, startOffsetX = 0, startOffsetY = 0, rafId = null;
     cropFrame.addEventListener('pointerdown', (e) => {
       if (!state.previewImage) return;
-      if (e.target.closest('.floating-panel')) return; 
+      if (e.target.closest('.controls-panel') || e.target.closest('.top-bar')) return; 
       if (e.pointerType === 'touch' && e.isPrimary === false) return;
       isDragging = true;
       startX = e.clientX; startY = e.clientY; startOffsetX = state.offsetX; startOffsetY = state.offsetY;
@@ -823,7 +669,7 @@
 
     if (isHeic && typeof heic2any !== 'undefined') {
       heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 })
-        .then(jpegBlob => { if (Array.isArray(jpegBlob)) jpegBlob = jpegBlob[0]; const reader = new FileReader(); reader.onload = (e) => processImage(e.target.result, false); reader.readAsDataURL(jpegBlob); })
+        .then(jpegBlob => { if (Array.isArray(jpegBlob)) jpegBlob = jpegBlob[0]; const reader = new FileReader(); reader.onload = (e) => processImage(e.target.result); reader.readAsDataURL(jpegBlob); })
         .catch(() => { $('loadingState').classList.add('hidden'); showToast('Ошибка конвертации HEIC'); });
     } else if (isRawDng && typeof UTIF !== 'undefined') {
       const reader = new FileReader();
@@ -854,7 +700,7 @@
           else if (orientation === 8) { ctx.translate(0, w); ctx.rotate(-Math.PI / 2); }
           
           ctx.drawImage(tempCanvas, 0, 0);
-          processImage(canvas.toDataURL('image/jpeg', 0.9), true); 
+          processImage(canvas.toDataURL('image/jpeg', 0.9)); 
         } catch (err) { 
           $('loadingState').classList.add('hidden'); 
           showToast('Ошибка чтения RAW/DNG'); 
@@ -863,12 +709,12 @@
       reader.readAsArrayBuffer(file);
     } else {
       const reader = new FileReader();
-      reader.onload = (e) => processImage(e.target.result, false);
+      reader.onload = (e) => processImage(e.target.result);
       reader.readAsDataURL(file);
     }
   }
 
-  function processImage(dataUrl, isRaw) {
+  function processImage(dataUrl) {
     const img = new Image();
     img.onload = () => {
       state.fullImage = img; 
@@ -880,37 +726,23 @@
         tempCanvas.width = prevW; tempCanvas.height = prevH;
         tempCanvas.getContext('2d').drawImage(img, 0, 0, prevW, prevH);
         state.previewImage = new Image();
-        state.previewImage.onload = () => { state.imgWidth = prevW; state.imgHeight = prevH; setupPreviewImage(tempCanvas.toDataURL('image/jpeg', 0.9), isRaw); };
+        state.previewImage.onload = () => { state.imgWidth = prevW; state.imgHeight = prevH; setupPreviewImage(tempCanvas.toDataURL('image/jpeg', 0.9)); };
         state.previewImage.src = tempCanvas.toDataURL('image/jpeg', 0.9);
       } else {
         state.previewImage = img;
         state.imgWidth = img.naturalWidth; state.imgHeight = img.naturalHeight;
-        setupPreviewImage(dataUrl, isRaw);
+        setupPreviewImage(dataUrl);
       }
     };
     img.onerror = () => { $('loadingState').classList.add('hidden'); showToast('Не удалось загрузить. Формат не поддерживается.'); };
     img.src = dataUrl;
   }
 
-  function setupPreviewImage(src, isRaw) {
+  function setupPreviewImage(src) {
     cropImage.src = src;
     $('uploadScreen').style.display = 'none';
     $('editorScreen').classList.add('active');
-    
-    if (isRaw) {
-      state.isRaw = true;
-      $('bottomBar').style.display = 'none';
-      $('openExportBtn').style.display = 'none';
-      $('developBtn').style.display = 'flex';
-      switchTab('raw');
-    } else {
-      state.isRaw = false;
-      $('bottomBar').style.display = 'flex';
-      $('openExportBtn').style.display = 'flex';
-      $('developBtn').style.display = 'none';
-      switchTab('crop');
-    }
-    
+    switchTab('crop');
     setTimeout(() => { updateFrame(); applyFilters(); updateOutputRes(); $('loadingState').classList.add('hidden'); }, 50);
   }
 
@@ -920,8 +752,8 @@
     const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
     const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
     
-    const availW = Math.max(0, canvasArea.clientWidth - padX);
-    const availH = Math.max(0, canvasArea.clientHeight - padY);
+    const availW = Math.max(0, canvasArea.clientWidth - padX - 40);
+    const availH = Math.max(0, canvasArea.clientHeight - padY - 40);
     
     let frameW, frameH;
     if (availW / availH > r) { frameH = availH; frameW = frameH * r; } 
@@ -964,7 +796,6 @@
     $('zoomSlider').value = 100; $('zoomVal').textContent = '100%';
   }
 
-  // ИСПРАВЛЕНО: Математика отражения (компенсация смещения)
   function updateImageTransform() {
     if (!state.previewImage) return;
     const s = state.baseScale * state.zoom;
@@ -974,9 +805,7 @@
     let transX = state.offsetX;
     let transY = state.offsetY;
     
-    // Если отражаем по горизонтали, нужно сдвинуть фото вправо на его ширину
     if (state.flipH === -1) transX += scaledW;
-    // Если отражаем по вертикали, нужно сдвинуть фото вниз на его высоту
     if (state.flipV === -1) transY += scaledH;
     
     cropImage.style.transform = `translate3d(${transX}px, ${transY}px, 0) scale(${s * state.flipH}, ${s * state.flipV})`;
